@@ -2,13 +2,14 @@ __hash:v
 _hash:Wa
 _meta:va
 _rest:tb
-afn:s
+afn:fb
 arr:i
 base:ub
 bitmap:R
-buf:vb
+buf:bc
 buffer_:Da
 chunk:ma
+chunk_next:Zb
 ci:pb
 cljs$core$IAssociative$:Jb
 cljs$core$IAssociative$_assoc$arity$3:Aa
@@ -36,7 +37,7 @@ cljs$core$IEncodeJS$_clj__GT_js$arity$1:Pb
 cljs$core$IEquiv$_equiv$arity$2:P
 cljs$core$IFind$_find$arity$2:hb
 cljs$core$IFn$_invoke$arity$0:C
-cljs$core$IFn$_invoke$arity$1:g
+cljs$core$IFn$_invoke$arity$1:D
 cljs$core$IFn$_invoke$arity$10:Ea
 cljs$core$IFn$_invoke$arity$11:Fa
 cljs$core$IFn$_invoke$arity$12:Ga
@@ -58,7 +59,7 @@ cljs$core$IFn$_invoke$arity$7:Qa
 cljs$core$IFn$_invoke$arity$8:Ra
 cljs$core$IFn$_invoke$arity$9:Sa
 cljs$core$IFn$_invoke$arity$variadic:A
-cljs$core$IHash$:ic
+cljs$core$IHash$:dc
 cljs$core$IHash$_hash$arity$1:S
 cljs$core$IIndexed$:Eb
 cljs$core$IIndexed$_nth$arity$2:Z
@@ -94,7 +95,7 @@ cljs$core$ISeq$_rest$arity$1:fa
 cljs$core$ISeqable$:Xb
 cljs$core$ISeqable$_seq$arity$1:M
 cljs$core$ISequential$:Fb
-cljs$core$ISet$:pc
+cljs$core$ISet$:sc
 cljs$core$ITransientAssociative$_assoc_BANG_$arity$3:ab
 cljs$core$ITransientCollection$_conj_BANG_$arity$2:bb
 cljs$core$ITransientCollection$_persistent_BANG_$arity$1:jb
@@ -130,7 +131,7 @@ iter:eb
 kv_reduce:nb
 len:Ua
 meta:u
-meta6796:Zb
+meta6800:cc
 more:sa
 mseq:F
 next_entry:ob
@@ -141,7 +142,6 @@ ns:ha
 off:V
 rest:za
 root_iter:Ib
-s:D
 sb:$b
 seen:Ab
 str:wa

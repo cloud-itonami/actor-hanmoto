@@ -67,13 +67,22 @@
                light). The traffic so far is the operator's own."}
   {:gate/id :principal-established
    :gate/met false
-   ;; 2026-08-31: half met, and it is the caller half.
-   :gate/note "The caller is established: :caller comes from the x-402-payer
-               header the gateway sets after verifying the payment -- proof, not
-               assertion -- rendered as a did:pkh. :scope still has no source. No
-               biscuit root key is configured, so a presented token is REFUSED
-               rather than ignored (401) and every call is unscoped. Scoped
-               billing needs that key."}
+   ;; 2026-08-31: this note said half met, and it is the caller half. That was
+   ;; wrong, and wrong in the direction that flatters: the header it named,
+   ;; `x-402-payer`, appears nowhere in the facilitator. Nothing ever set it, so
+   ;; :caller was empty in production and the only way to fill it was to forge
+   ;; it -- an identity field whose sole writer was an attacker.
+   ;;
+   ;; Now the actor reads `x-nexus-payment-payer`, the name nexus actually
+   ;; forwards, and `hanmoto.gateway` establishes that the sender really was
+   ;; nexus before that value is worth anything. The caller half is real for the
+   ;; first time. Still unmet, because :scope has no source.
+   :gate/note "The caller half is established: :caller is the payer nexus
+               forwards, and it means something now that the origin refuses
+               requests that did not come through nexus. :scope still has no
+               source -- no biscuit root key is configured, so a presented token
+               is REFUSED rather than ignored (401) and every call is unscoped.
+               Scoped billing needs that key."}
   {:gate/id :register-refreshed-on-a-schedule
    :gate/met false
    ;; 2026-08-31: narrowed. Every answer now carries the register's as-of, its
@@ -96,23 +105,32 @@
                402 with a challenge naming this actor's payTo. There is a way to
                be paid."}
   {:gate/id :priced-resources-not-served-free
-   :gate/met false
-   ;; 2026-08-31: measured, not assumed. The same resource, asked twice:
-   ;;   x402.nexus/gateway/hanmoto/x402/counts -> 402, Base USDC challenge
-   ;;     naming this actor's payTo, maxAmountRequired 1000
-   ;;   hanmoto.itonami.cloud/x402/counts      -> 200, the counts themselves
-   ;; The paywall lives entirely at the facilitator. Searching this actor for
-   ;; 402 finds no enforcement at all -- only the offer path strings and the
-   ;; facilitator URL. Anyone holding the origin URL reads the priced answer for
-   ;; nothing, and from the seller side a bypassed call and a paid one are the
-   ;; same shape: a 200 carrying data. That is this session's recurring defect
-   ;; wearing a new coat -- a control that could be skipped returns what a
-   ;; control that was satisfied returns.
-   :gate/note "The price is advertised at the gateway while the origin serves the
-               same resource unauthenticated. Measured 2026-08-31: gateway 402,
-               origin 200. Until the origin either verifies payment itself or
-               refuses calls that did not arrive through the facilitator, the
-               posted price is optional and the catalog entry overstates it."}
+   :gate/met true
+   ;; 2026-08-31, later the same day: met, and measured in both directions
+   ;; against the deployment rather than read off the code.
+   ;;
+   ;;   no token          -> 402   the bypass, closed
+   ;;   forged payer      -> 402   the spoofing surface, closed with it
+   ;;   wrong token       -> 403   a rejected credential is not an absent one
+   ;;   correct token     -> 200   the facilitator's own call still works
+   ;;   /health           -> 200   free paths untouched
+   ;;   an unsold path    -> 404   still not-for-sale, never 402
+   ;;
+   ;; Mechanism: nexus `proxy-to-origin` injects a shared secret when the seller
+   ;; rule declares auth-header/auth-secret-env -- offered since murakumo, and
+   ;; now declared on all three hanmoto rules in SELLERS_KV. `hanmoto.gateway`
+   ;; requires it on priced paths and fails closed when the origin holds no
+   ;; secret at all.
+   ;;
+   ;; **One link is still unmeasured, and it is named rather than assumed**: no
+   ;; settled payment has travelled the whole path. The origin admitting the
+   ;; correct token was measured here; nexus injecting it on a settled call is
+   ;; read from its code and its rule, not observed. Closing that needs a real
+   ;; 0.001 USDC purchase through the gateway, which is the operator's to make.
+   :gate/note "Met. Priced paths refuse unless the request carries the secret
+               nexus injects; measured 2026-08-31 as 402 without it, 403 with a
+               wrong one, 200 with the right one, and free paths unchanged. Not
+               yet observed: a settled payment traversing gateway to origin."}
   {:gate/id :terms-for-a-directory-service
    :gate/met false
    :gate/note "No terms written for redistributing a host directory, including
