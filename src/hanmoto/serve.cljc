@@ -12,6 +12,30 @@
   back together means **an answer that was served and not counted is not
   expressible here**.
 
+  ## The caller and the scope are NOT taken from the request
+
+  `scope` is the billing key: `usage/count-key` and `usage/mac-key` both fold on
+  it. If it arrived in the request body, a caller could write usage into someone
+  else's scope, or rotate scopes to keep their own monthly-active count at one
+  forever. `caller` has the same problem in the other direction -- any string
+  would become a customer.
+
+  This is the shape ADR-2608150100 found on `/infer/transfer`: the only check
+  was a balance, and a balance is an answer about solvency, not about who is
+  asking.
+
+  So `handle` takes a `principal` **beside** the request, never inside it, and
+  the request's own `:caller` / `:scope` are ignored if present. A host that has
+  not authenticated anyone passes `nil`, and then the call is anonymous: it
+  counts as load and cannot count as a customer.
+
+  ⚠ **Nothing here verifies the principal.** This namespace makes the trust
+  boundary explicit and unforgeable-by-the-caller; establishing it is the host's
+  job. The intended source is the payer of the x402 `exact` authorization
+  (a `did:pkh`, ADR-2608313700) for `:caller`, and a capability token for
+  `:scope` -- biscuit is this workspace's delegation centre (ADR-2608180200) and
+  verifies with no secret at the edge, which is what an edge needs.
+
   ## A priced path the meter cannot count is refused
 
   `hanmoto.offer` gives each resource a `:dimension`. If that dimension is not
@@ -52,8 +76,12 @@
 (defn handle
   "-> `{:status n :body v :usage [records]}`.
 
-  `req` is `{:method :path :caller :scope :instant}`; `digest` is injected."
-  [{:keys [register digest] :as _ctx} {:keys [method path caller scope instant] :as _req}]
+  `req` is `{:method :path :instant}` -- **no identity fields**. `principal` is
+  `{:caller :scope}` and comes from the host, or nil for an anonymous call.
+  `digest` is injected."
+  [{:keys [register digest] :as _ctx}
+   {:keys [method path instant] :as _req}
+   {:keys [caller scope] :as _principal}]
   (let [res (offer/resource-for method path)
         rows (:rows register)]
     (cond

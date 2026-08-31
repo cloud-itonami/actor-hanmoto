@@ -70,6 +70,24 @@
                end. Still unmet because nothing is deployed, no caller has
                arrived, and no store persists a record -- a meter exercised in a
                test has not measured a month."}
+  {:gate/id :principal-established
+   :gate/met false
+   ;; Added 2026-08-31, after asking whether any of this is under biscuit. It is
+   ;; not. `hanmoto.serve` now takes the caller and the scope BESIDE the request
+   ;; instead of inside it, so a caller can no longer name the scope it is billed
+   ;; under -- but nothing yet establishes who the principal is.
+   ;;
+   ;; scope is the billing key: usage/count-key and usage/mac-key both fold on
+   ;; it. A request-supplied scope lets anyone write usage into someone else's
+   ;; invoice, or rotate scopes to hold their own monthly-active count at one.
+   ;; ADR-2608150100 found the same shape on /infer/transfer, where the only
+   ;; check was a balance -- an answer about solvency, not about who is asking.
+   :gate/note "The trust boundary is explicit -- identity comes beside the
+               request, not inside it -- but nothing establishes it. :caller
+               should come from the payer of the x402 exact authorization (a
+               did:pkh) and :scope from a capability token; biscuit is this
+               workspace's delegation centre and verifies with no secret at the
+               edge. Until then every call is anonymous by construction."}
   {:gate/id :register-refreshed-on-a-schedule
    :gate/met false
    ;; 2026-08-31: narrowed. Every answer now carries the register's as-of, its
