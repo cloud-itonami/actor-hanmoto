@@ -77,12 +77,36 @@
    ;; forwards, and `hanmoto.gateway` establishes that the sender really was
    ;; nexus before that value is worth anything. The caller half is real for the
    ;; first time. Still unmet, because :scope has no source.
-   :gate/note "The caller half is established: :caller is the payer nexus
-               forwards, and it means something now that the origin refuses
-               requests that did not come through nexus. :scope still has no
-               source -- no biscuit root key is configured, so a presented token
-               is REFUSED rather than ignored (401) and every call is unscoped.
-               Scoped billing needs that key."}
+   ;; 2026-08-31, third pass: the verifier is real and the blocker moved.
+   ;; `hanmoto.scope` decodes a wire biscuit, verifies its signature against a
+   ;; configured root key, and reads the billing scope through
+   ;; `biscuit.authority/->grant` -- one scope or none, because two scopes is
+   ;; not a licence to pick one. Tested against tokens minted by
+   ;; biscuit-auth/biscuit itself, so what is exercised is interoperability
+   ;; rather than this workspace agreeing with itself; breaking the signature
+   ;; check turns exactly the two tests that name it red.
+   ;;
+   ;; Still unmet, and now for two reasons that are upstream rather than here:
+   ;;
+   ;; 1. `biscuit.wire/decode-block` keeps a block's check COUNT and drops the
+   ;;    checks. So an attenuated token cannot be honoured without ignoring
+   ;;    the limits it places on itself, and this actor refuses it instead
+   ;;    (`:biscuit/checks-not-evaluated`). Every reference token carries
+   ;;    checks, so that is the common case, not an edge.
+   ;;    (kotoba-lang/org-biscuitsec#2)
+   ;; 2. Nothing in this workspace mints a wire token. `biscuit.wire` is
+   ;;    decode-only, and the one issuer here signs the model payload, which is
+   ;;    different bytes.
+   ;;
+   ;; So no root key is configured, and configuring one would not help yet.
+   ;; That is a better place to be than before -- the missing piece is named
+   ;; and it is one upstream change -- but it is not met.
+   :gate/note "The caller half is established. The scope half has a verifier
+               now, tested against reference tokens, but no token it can accept:
+               wire decoding drops a block's checks, so attenuated tokens are
+               refused rather than silently widened, and nothing here mints a
+               check-free one. No root key is configured because one would not
+               yet change any answer."}
   {:gate/id :register-refreshed-on-a-schedule
    :gate/met false
    ;; 2026-08-31: narrowed. Every answer now carries the register's as-of, its
