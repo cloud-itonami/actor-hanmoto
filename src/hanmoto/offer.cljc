@@ -40,6 +40,33 @@
     :dimension :query
     :description "software values outside the category vocabulary, by descending count"}])
 
+(def terms-url
+  "Where the full terms live. The repository is public and the file changes by
+  commit, so `git log -p TERMS.md` is their history."
+  "https://github.com/cloud-itonami/actor-hanmoto/blob/main/TERMS.md")
+
+(def upstream-licensing
+  "What the two upstream directories actually license, read from
+  `kotoba-lang/global-accounts-datoms` rather than assumed.
+
+  This is DATA and it is the single copy. TERMS.md says the same thing in
+  prose and `/terms` serves this map; prose and a served summary drift, a
+  prose sentence and the value it describes drift, but there is only one place
+  here where the licence kind is written down.
+
+  Neither entry grants redistribution of the aggregate, which is why the terms
+  sell answers rather than the register."
+  [{:source "NodeInfo 2.x server self-descriptions"
+    :rows 26406
+    :license-kind :per-server
+    :bulk-export? false
+    :note "Each host publishes its own description under its own terms."}
+   {:source "plc.directory"
+    :rows 901
+    :license-kind :none-published
+    :bulk-export? true
+    :note "Published for replication (relays depend on it); no dataset licence attached."}])
+
 (def sold-path-prefixes (mapv :path-prefix priced-resources))
 
 (defn resource-for

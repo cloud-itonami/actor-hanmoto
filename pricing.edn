@@ -179,9 +179,38 @@
                wrong one, 200 with the right one, and free paths unchanged. Not
                yet observed: a settled payment traversing gateway to origin."}
   {:gate/id :terms-for-a-directory-service
-   :gate/met false
-   :gate/note "No terms written for redistributing a host directory, including
-               what a buyer may do with it."}
+   :gate/met true
+   ;; 2026-08-31: met, and writing them changed what this actor may honestly
+   ;; claim to sell.
+   ;;
+   ;; The licensing of both upstream directories was read rather than assumed:
+   ;;
+   ;;   NodeInfo 2.x  26,406 rows  :per-server     each host publishes its own
+   ;;                                              description under its own
+   ;;                                              terms; no bulk export exists
+   ;;   plc.directory    901 rows  :none-published published for replication;
+   ;;                                              no dataset licence attached
+   ;;
+   ;; **No licence covers the aggregate**, so this service cannot grant one.
+   ;; That is why the terms sell ANSWERS and not the register, and say so in
+   ;; the first paragraph rather than in a clause at the end. Redistribution
+   ;; rights over the underlying records are not ours to give -- they belong to
+   ;; each host that published its own NodeInfo.
+   ;;
+   ;; TERMS.md carries the prose; `hanmoto.offer/upstream-licensing` carries
+   ;; the licence facts as DATA, in one copy, which `/terms` serves. A test
+   ;; ties the row counts to the register's host total, so a drift between the
+   ;; two shows up red rather than as a quietly wrong claim.
+   ;;
+   ;; `/terms` is free and unpriced. A buyer cannot agree to terms it has to
+   ;; pay to read.
+   :gate/note "Met. TERMS.md states what is sold (answers, never the register),
+               what rights do not come with it, what the answers are never
+               about (hosts, never accounts), what every answer says about its
+               own age, and what is not warranted. Grounded in the two upstream
+               licences as measured -- per-server and none-published, neither
+               covering the aggregate. Served free at /terms, with the licence
+               facts as data rather than a second copy of the prose."}
   {:gate/id :unknown-tail-disclosed-in-product
    :gate/met true
    ;; 2026-08-31: met, and it was met before it was recorded -- the live
