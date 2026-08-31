@@ -108,20 +108,47 @@
                check-free one. No root key is configured because one would not
                yet change any answer."}
   {:gate/id :register-refreshed-on-a-schedule
-   :gate/met false
-   ;; 2026-08-31: narrowed. Every answer now carries the register's as-of, its
-   ;; source and its age in days (`hanmoto.register/provenance`), and rows
-   ;; without provenance are refused at load. So a buyer can no longer be sold a
-   ;; snapshot as current -- which was the sharper half of this gate, because an
-   ;; answer built from a stale register looked exactly like one built from a
-   ;; live register.
+   :gate/met true
+   ;; 2026-08-31: met, and the last step was the one that mattered.
    ;;
-   ;; Still unmet: nothing refreshes it.
-   :gate/note "Answers carry as-of, source and age-days, and undated rows are
-               refused at load -- a snapshot can no longer pass as current. Still
-               unmet because nothing refreshes the register: it remains the
-               2026-08-09 upstream snapshot, and selling a directory implies
-               keeping it current."}
+   ;; The register had no producer at all -- loaded by hand on 2026-08-09, it
+   ;; could only age. Now `scripts/build-register.cljs` derives it from the
+   ;; corpus and `scripts/refresh-register.cljs` runs daily from launchd
+   ;; (`cloud.itonami.hanmoto-register`).
+   ;;
+   ;; **It has actually run.** A schedule that never fired and no schedule are
+   ;; the same thing from outside, so this was not called met until launchd
+   ;; published one end to end: exit 0, `:outcome :published`, and the live
+   ;; answer carrying that run's own timestamp.
+   ;;
+   ;; Answers now carry two dates, because one cannot say this:
+   ;;
+   ;;   as-of      2026-08-09   when the DATA last changed
+   ;;   checked-at 2026-08-31   when it was last re-derived
+   ;;   age-days   22           measured from the data, not the rebuild
+   ;;
+   ;; Re-deriving reproduced the 2026-08-09 counts exactly -- 27,307 hosts,
+   ;; 1,628 unclassified, every category identical. The register is old and not
+   ;; wrong, and a rebuild does not shorten its age. Stamping `as-of` with the
+   ;; run time would have made every stale snapshot look new.
+   ;;
+   ;; Two limits, named rather than left to be discovered:
+   ;;
+   ;; 1. It runs on the operator host, because it needs Cloudflare credentials
+   ;;    and fleet nodes hold none. If that machine is off, nothing runs -- but
+   ;;    ~/.gftd/hanmoto-register.edn is written on every run including ones
+   ;;    that change nothing, so a job that stopped is visible.
+   ;; 2. It does not advance the corpus pin. The corpus is a west project at a
+   ;;    detached HEAD, and moving a pin is a governed action, so the job
+   ;;    reports `:corpus-behind` and re-derives from what the pin says. A
+   ;;    stale pin still means a stale register; it is just no longer silent.
+   :gate/note "Met. build-register.cljs derives the register from the corpus and
+               refresh-register.cljs publishes it daily from launchd; one run has
+               gone end to end and the live answer carries its timestamp. Answers
+               separate as-of (when the data changed) from checked-at (when it
+               was last re-derived), so a rebuild cannot make a stale snapshot
+               look new. Runs on the operator host, and reports rather than moves
+               the corpus pin."}
   {:gate/id :catalog-entry
    :gate/met true
    :gate/note "Met. Registered at x402.nexus via POST /apply; the catalog lists
