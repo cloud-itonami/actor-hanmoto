@@ -27,14 +27,23 @@
         (is (false? (:allowed? r)) (str "root-public-key=" (pr-str k)))
         (is (= :biscuit/no-root-key-configured (:reason r)))))))
 
-(deftest a-real-token-verifies-and-is-then-refused-for-carrying-checks
-  (testing "reference 実装が発行した token は check を持つ。`biscuit.wire` は
-            check の本体を捨てて数だけ残すので、この実装は評価できない ——
-            評価できないものを通せば、他人の attenuation を黙って広げる"
+(deftest a-real-tokens-check-is-now-run-and-can-fail
+  (testing "以前はここが :checks-not-evaluated だった —— wire が check を
+            捨てていたため。いまは評価され、facts を出さない verifier には
+            通らない。**署名不一致ではこの理由に到達できない**"
     (let [r (of {:token-bytes (fixture "test001_basic")})]
       (is (false? (:allowed? r)))
-      (is (= :biscuit/checks-not-evaluated (:reason r))
-          "署名不一致ならこの理由には到達できない —— 検証を通り抜けた先の拒否である"))))
+      (is (= :biscuit/check-failed (:reason r))
+          "「評価できない」ではなく「評価して通らなかった」"))))
+
+(deftest the-same-token-passes-its-check-once-the-facts-are-there
+  (testing "両方向を出す —— 落ちるだけの検査は、何も discriminate していない"
+    (let [r (of {:token-bytes (fixture "test001_basic")
+                 :facts (quote [[resource "file1"] [operation "read"]])})]
+      (is (not= :biscuit/check-failed (:reason r))
+          "check は通る。ここから先は scope の問題であって check の問題ではない")
+      (is (= :biscuit/no-scope-in-token (:reason r))
+          "この token は scope を宣言していない —— check を通った先の別の拒否"))))
 
 (deftest a-token-under-another-root-key-is-refused-as-a-signature-failure
   (testing "実データの負のコントロール。scope 不在とは別の理由でなければならない"

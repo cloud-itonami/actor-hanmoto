@@ -16,16 +16,24 @@
   `biscuit.wire`'s own docstring says conversion is not verification; the order
   here is decode, verify, and only then read.
 
-  ## A token that carries checks is refused
+  ## A token's checks are run, and refused when they cannot be
 
-  `biscuit.wire/decode-block` keeps `:check-count` and **drops the checks**. So
-  this implementation cannot evaluate them.
+  This used to refuse every token carrying a check, because `biscuit.wire`
+  counted them and dropped them. It now decodes the ones it can evaluate --
+  predicates only -- and `biscuit.authorizer/run-checks` runs them against the
+  facts this actor states about the call.
 
-  Serving such a token anyway would honour a token while ignoring the limits
-  the token places on itself -- a `check if time($t), $t < …` would become
-  unlimited, and the answer would be indistinguishable from one where the
-  check passed. Refusing is the only reading that does not silently widen
-  somebody's attenuation.
+  The refusal did not go away, it got narrower. A check carrying an expression,
+  a `kind` other than One, or a disjunction is still refused
+  (`:biscuit/checks-not-evaluated`), because honouring one would mean ignoring
+  the limits the token places on itself -- a `check if time($t), $t < …` would
+  become unlimited, and the answer would be indistinguishable from one where
+  the check passed.
+
+  A check that ran and did NOT pass is a different answer again
+  (`:biscuit/check-failed`): the token asked, and this actor could not satisfy
+  it. Collapsing that into the cannot-evaluate answer would tell an issuer to
+  fix the wrong thing.
 
   ## One scope, or none
 
@@ -37,6 +45,7 @@
   mistake they made."
   (:require [authority.scope :as scope]
             [biscuit.authority :as authority]
+            [biscuit.authorizer :as az]
             [biscuit.wire :as wire]
             [clojure.string :as str]))
 
@@ -60,9 +69,11 @@
   `{:allowed? true :scope \"…\"}` or `{:allowed? false :reason kw}`.
 
   `token-bytes` is the decoded bearer token, `root-public-key` this actor's
-  configured root key, `verify-fn` `(fn [pk payload sig] bool)`, and `now` an
-  ISO-8601 instant compared against the token's `before` facts."
-  [{:keys [token-bytes root-public-key verify-fn now]}]
+  configured root key, `verify-fn` `(fn [pk payload sig] bool)`, `now` an
+  ISO-8601 instant compared against the token's `before` facts, and `facts`
+  what this actor is willing to state about the call -- the verifier's own
+  knowledge, which is never taken from the token."
+  [{:keys [token-bytes root-public-key verify-fn now facts]}]
   (cond
     (empty? root-public-key) (deny :biscuit/no-root-key-configured)
     (empty? token-bytes) (deny :biscuit/malformed)
@@ -75,11 +86,15 @@
           (if-not (:ok? v)
             (deny (or (:reason v) :biscuit/not-authorized))
             (let [m (wire/token->model t)]
-              (cond
-                (some pos? (keep :block/check-count (:biscuit/blocks m)))
-                (deny :biscuit/checks-not-evaluated)
+              (let [ck (az/run-checks m v {:facts (vec facts)})]
+                (cond
+                  (and (not (:allowed? ck)) (= :checks-not-decoded (:reason ck)))
+                  (deny :biscuit/checks-not-evaluated)
 
-                :else
+                  (not (:allowed? ck))
+                  (deny (keyword "biscuit" (name (:reason ck))))
+
+                  :else
                 (let [g (authority/->grant m {})
                       scopes (vec (:grant/scopes g))
                       expires (:grant/expires g)]
@@ -92,4 +107,4 @@
                     :else (let [s (scope/render (first scopes))]
                             (if (blank? s)
                               (deny :biscuit/no-scope-in-token)
-                              {:allowed? true :scope s}))))))))))))
+                              {:allowed? true :scope s})))))))))))))

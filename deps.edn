@@ -4,7 +4,7 @@
         ;; and both are portable .cljc -- they run in the Worker, not beside it.
         io.github.kotoba-lang/org-biscuitsec
         {:git/url "https://github.com/kotoba-lang/org-biscuitsec.git"
-         :git/sha "753201fc60f825bade581e87bcb5cee70cdb6398"}
+         :git/sha "f8b7dde37365ec5f627802583160a5df8fda43fa"}
         ;; The curve. org-biscuitsec injects sign/verify and deliberately does
         ;; not depend on an implementation, so the host supplies one.
         io.github.kotoba-lang/org-ietf-ed25519
@@ -13,7 +13,13 @@
  :aliases
  ;; The compiler is a build tool, so it lives in an alias rather than in
  ;; :deps -- the Worker ships biscuit and the curve, not shadow.
- {:build {:extra-deps {thheller/shadow-cljs {:mvn/version "3.4.6"}}
+ {:build {:extra-deps {thheller/shadow-cljs {:mvn/version "3.4.6"}
+                       ;; shadow.build.npm requires it. It used to arrive
+                       ;; transitively; adding the biscuit git dep changed the
+                       ;; resolution and it stopped, which surfaces as
+                       ;;  from inside
+                       ;; shadow rather than as a missing dependency of ours.
+                       org.clojure/data.json {:mvn/version "2.5.0"}}
           :main-opts ["-m" "shadow.cljs.devtools.cli" "release" "worker"]}
   :test {:extra-paths ["test"]
          :extra-deps {io.github.cognitect-labs/test-runner
