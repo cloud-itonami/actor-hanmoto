@@ -95,7 +95,12 @@
                   (deny (keyword "biscuit" (name (:reason ck))))
 
                   :else
-                (let [g (authority/->grant m {})
+                (let [;; One argument: what THIS token grants, with no prior authority
+                        ;; of ours folded in. Passing {} here read like an
+                        ;; unconstrained base and meant the empty antichain, so
+                        ;; every scope came back empty and every token was
+                        ;; answered :no-scope-in-token.
+                        g (authority/->grant m)
                       scopes (vec (:grant/scopes g))
                       expires (:grant/expires g)]
                   (cond

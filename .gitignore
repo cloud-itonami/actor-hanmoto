@@ -1,3 +1,18 @@
 .cpcache/
 target/
 node_modules/
+
+# Build outputs. They were tracked, and that opened the exact hole that bit
+# nexus-x402 on 2026-08-31: `wrangler deploy` ships `dist/worker/worker.js`,
+# and the deploy guard checks the CHECKOUT's git state, not the artifact's
+# freshness. So a checkout perfectly in step with main could ship a bundle
+# that disagreed with its own source, and the guard stayed green. It happened:
+# a stale build went out over a fix and put a wrong public number back.
+#
+# Untracking them means a deploy has to build first, which is what the
+# resource-guard flow does anyway. It also removes a subtler trap -- a stale
+# `dist/` is indistinguishable from a fresh one until you compare sizes, so a
+# build that never ran (the lock was held, every retry refused) reads as a
+# build that succeeded.
+dist/
+.shadow-cljs/

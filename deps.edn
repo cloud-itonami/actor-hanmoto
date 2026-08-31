@@ -4,7 +4,7 @@
         ;; and both are portable .cljc -- they run in the Worker, not beside it.
         io.github.kotoba-lang/org-biscuitsec
         {:git/url "https://github.com/kotoba-lang/org-biscuitsec.git"
-         :git/sha "f8b7dde37365ec5f627802583160a5df8fda43fa"}
+         :git/sha "312be1c56d0543d335d77a89f8aec28c0b0408a4"}
         ;; The curve. org-biscuitsec injects sign/verify and deliberately does
         ;; not depend on an implementation, so the host supplies one.
         io.github.kotoba-lang/org-ietf-ed25519
