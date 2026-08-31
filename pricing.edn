@@ -67,46 +67,41 @@
                light). The traffic so far is the operator's own."}
   {:gate/id :principal-established
    :gate/met false
-   ;; 2026-08-31: this note said half met, and it is the caller half. That was
-   ;; wrong, and wrong in the direction that flatters: the header it named,
-   ;; `x-402-payer`, appears nowhere in the facilitator. Nothing ever set it, so
-   ;; :caller was empty in production and the only way to fill it was to forge
-   ;; it -- an identity field whose sole writer was an attacker.
+   ;; 2026-08-31, fourth pass. The blocker moved out of the library and into
+   ;; operations, which is a better place for it to be.
    ;;
-   ;; Now the actor reads `x-nexus-payment-payer`, the name nexus actually
-   ;; forwards, and `hanmoto.gateway` establishes that the sender really was
-   ;; nexus before that value is worth anything. The caller half is real for the
-   ;; first time. Still unmet, because :scope has no source.
-   ;; 2026-08-31, third pass: the verifier is real and the blocker moved.
-   ;; `hanmoto.scope` decodes a wire biscuit, verifies its signature against a
-   ;; configured root key, and reads the billing scope through
-   ;; `biscuit.authority/->grant` -- one scope or none, because two scopes is
-   ;; not a licence to pick one. Tested against tokens minted by
-   ;; biscuit-auth/biscuit itself, so what is exercised is interoperability
-   ;; rather than this workspace agreeing with itself; breaking the signature
-   ;; check turns exactly the two tests that name it red.
+   ;; Previously this refused every token carrying a check, because
+   ;; `biscuit.wire` counted checks and dropped them -- and every reference
+   ;; token carries one, so that was the common case, not an edge. Both halves
+   ;; are now upstream: wire decodes the checks this implementation can
+   ;; evaluate, and `biscuit.authorizer/run-checks` runs them for a
+   ;; wire-verified token.
    ;;
-   ;; Still unmet, and now for two reasons that are upstream rather than here:
+   ;; Measured against the deployment with the biscuit spec's own public test
+   ;; key temporarily configured, then removed:
    ;;
-   ;; 1. `biscuit.wire/decode-block` keeps a block's check COUNT and drops the
-   ;;    checks. So an attenuated token cannot be honoured without ignoring
-   ;;    the limits it places on itself, and this actor refuses it instead
-   ;;    (`:biscuit/checks-not-evaluated`). Every reference token carries
-   ;;    checks, so that is the common case, not an edge.
-   ;;    (kotoba-lang/org-biscuitsec#2)
-   ;; 2. Nothing in this workspace mints a wire token. `biscuit.wire` is
-   ;;    decode-only, and the one issuer here signs the model payload, which is
-   ;;    different bytes.
+   ;;   reference token       -> :biscuit/check-failed      the check RAN
+   ;;   token under other key -> :biscuit/signature-mismatch verification still
+   ;;                                                       discriminates
+   ;;   garbage               -> :biscuit/malformed
+   ;;   key removed           -> :biscuit/no-root-key-configured
    ;;
-   ;; So no root key is configured, and configuring one would not help yet.
-   ;; That is a better place to be than before -- the missing piece is named
-   ;; and it is one upstream change -- but it is not met.
-   :gate/note "The caller half is established. The scope half has a verifier
-               now, tested against reference tokens, but no token it can accept:
-               wire decoding drops a block's checks, so attenuated tokens are
-               refused rather than silently widened, and nothing here mints a
-               check-free one. No root key is configured because one would not
-               yet change any answer."}
+   ;; The refusal that remains is narrower and honest: a check carrying an
+   ;; expression, a kind other than One, or a disjunction is still
+   ;; :biscuit/checks-not-evaluated, because honouring one would mean ignoring
+   ;; the limits a token places on itself.
+   ;;
+   ;; Still unmet, for one reason and it is no longer a library gap: **nothing
+   ;; in this workspace mints a wire token**. `biscuit.wire` is decode-only and
+   ;; the one issuer here (cloud-itonami-app-5090-stability) signs the model
+   ;; payload, which is different bytes. So no root key is configured in
+   ;; production, because there is no key whose tokens anyone could present.
+   :gate/note "The caller half is established, and the scope half now has a
+               verifier that decodes and RUNS a token's checks -- measured live
+               on a reference token, which reaches :check-failed rather than
+               being refused as unevaluable. Unmet because nothing here mints a
+               wire token, so no root key is configured: there would be no
+               token to present to it."}
   {:gate/id :register-refreshed-on-a-schedule
    :gate/met true
    ;; 2026-08-31: met, and the last step was the one that mattered.
