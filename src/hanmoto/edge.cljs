@@ -5,9 +5,10 @@
 
   ## Where the principal comes from
 
-  `:caller` is the payer, taken from the header the x402 gateway sets after it
-  verified the payment. Trusting a header is trusting the host that set it, and
-  that host is the facilitator this actor registered with. It is NOT the caller.
+  `:caller` is the payer nexus forwards after settling. Trusting a header is
+  trusting the host that set it -- so `hanmoto.gateway` establishes that the
+  host really was the facilitator, by a secret a direct caller cannot produce,
+  *before* this value means anything. Read for billing, never for authority.
 
   `:scope` would come from a biscuit. **There is no root key configured here**,
   so a presented token cannot be verified -- and an unverifiable token is
@@ -19,12 +20,12 @@
   ;; `undefined` になり、`offer-status` が `:unconfigured` を返し、**resources 空の
   ;; 正当な x402 文書**を配ることになる —— 設定漏れと「売る物が無い」が
   ;; 見分けられなくなる形で。`kotobase.edge-cacao` が同じ理由で同じ規約を持つ。
-  (:require [hanmoto.offer :as offer]
+  (:require [hanmoto.gateway :as gateway]
+            [hanmoto.offer :as offer]
             [hanmoto.principal :as principal]
             [hanmoto.register :as register]
             [hanmoto.serve :as serve]))
 
-(def payer-header "x-402-payer")
 (def scope-header "authorization")
 
 (defn- json [status body]
@@ -61,7 +62,7 @@
 
 (defn- principal-of [env req]
   (let [h (.-headers req)
-        payer (.get h payer-header)
+        payer (.get h gateway/payer-header)
         token (.get h scope-header)]
     (principal/of
      {:payer payer
@@ -87,7 +88,10 @@
   (let [url (js/URL. (.-url req))
         path (.-pathname url)
         method (.-method req)
-        now (.toISOString (js/Date.))]
+        now (.toISOString (js/Date.))
+        ;; Decided once. Asking twice invites the two answers to drift.
+        gate (gateway/admit {:presented (.get (.-headers req) gateway/token-header)
+                             :configured (aget env "NEXUS_ORIGIN_TOKEN")})]
     (cond
       (= path "/.well-known/x402")
       (js/Promise.resolve
@@ -95,6 +99,19 @@
 
       (= path "/health")
       (js/Promise.resolve (json 200 {:ok true :seller offer/seller :at now}))
+
+      ;; Priced paths must have come through the facilitator. Checked before the
+      ;; register is even read: a bypassed call should cost us nothing, and it
+      ;; must not be answerable from cache, R2 or anywhere else.
+      ;;
+      ;; Only priced paths. Gating the rest would answer 402 for a path this
+      ;; actor never offered -- charging for something never promised, which is
+      ;; the mistake `hanmoto.serve`'s 404 arm exists to avoid.
+      (and (offer/sells? method path) (not (gateway/admitted? gate)))
+      (let [{:keys [status body]} (get gateway/refusal (:refuse gate))]
+        (js/Promise.resolve
+         (json status (assoc body :buy (str offer/default-facilitator
+                                            "/gateway/" offer/seller path)))))
 
       :else
       (let [p (principal-of env req)]
