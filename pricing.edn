@@ -67,41 +67,42 @@
                light). The traffic so far is the operator's own."}
   {:gate/id :principal-established
    :gate/met false
-   ;; 2026-08-31, fourth pass. The blocker moved out of the library and into
-   ;; operations, which is a better place for it to be.
+   ;; 2026-08-31, fifth pass. The mechanism is finished and proven end to end;
+   ;; what is left is one operational decision, and it is not this actor's.
    ;;
-   ;; Previously this refused every token carrying a check, because
-   ;; `biscuit.wire` counted checks and dropped them -- and every reference
-   ;; token carries one, so that was the common case, not an edge. Both halves
-   ;; are now upstream: wire decodes the checks this implementation can
-   ;; evaluate, and `biscuit.authorizer/run-checks` runs them for a
-   ;; wire-verified token.
+   ;; Measured live, with a freshly generated root key configured for the
+   ;; probe and then removed:
    ;;
-   ;; Measured against the deployment with the biscuit spec's own public test
-   ;; key temporarily configured, then removed:
+   ;;   a token minted HERE by biscuit.wire/encode-authority-token, presented
+   ;;   to the deployment, was verified, had its checks run, had its scope
+   ;;   read, and the meter recorded
    ;;
-   ;;   reference token       -> :biscuit/check-failed      the check RAN
-   ;;   token under other key -> :biscuit/signature-mismatch verification still
-   ;;                                                       discriminates
-   ;;   garbage               -> :biscuit/malformed
-   ;;   key removed           -> :biscuit/no-root-key-configured
+   ;;       count/query/kotoba://graph/hanmoto-probe/2026-08
    ;;
-   ;; The refusal that remains is narrower and honest: a check carrying an
-   ;; expression, a kind other than One, or a disjunction is still
-   ;; :biscuit/checks-not-evaluated, because honouring one would mean ignoring
-   ;; the limits a token places on itself.
+   ;;   No fixture, no borrowed key, and the scope in that key came out of the
+   ;;   token rather than out of the request.
    ;;
-   ;; Still unmet, for one reason and it is no longer a library gap: **nothing
-   ;; in this workspace mints a wire token**. `biscuit.wire` is decode-only and
-   ;; the one issuer here (cloud-itonami-app-5090-stability) signs the model
-   ;; payload, which is different bytes. So no root key is configured in
-   ;; production, because there is no key whose tokens anyone could present.
-   :gate/note "The caller half is established, and the scope half now has a
-               verifier that decodes and RUNS a token's checks -- measured live
-               on a reference token, which reaches :check-failed rather than
-               being refused as unevaluable. Unmet because nothing here mints a
-               wire token, so no root key is configured: there would be no
-               token to present to it."}
+   ;; Two things had to be fixed to get there, and both had been silently
+   ;; broken for as long as they had existed:
+   ;;
+   ;; 1. `biscuit.wire` counted a block's checks and dropped them, so every
+   ;;    token carrying one was refused -- and every real token carries one.
+   ;;    Now decoded when evaluable, refused by name when not.
+   ;; 2. This actor called `(->grant m {})`, which reads like an unconstrained
+   ;;    base and means the empty antichain, so EVERY token came back with no
+   ;;    scope. Nobody noticed because no token had ever reached that line.
+   ;;    A line that never runs looks exactly like a line that works.
+   ;;
+   ;; Unmet because no root key is configured in production, and configuring
+   ;; one is a custody decision -- whose key, and in which kagi compartment --
+   ;; that belongs to the operator, not to a passing agent. Until then every
+   ;; real call is unscoped, which is the honest state: the capability exists
+   ;; and nobody has been given the means to use it.
+   :gate/note "Mechanism finished and proven live: a token minted in this
+               workspace was verified, its checks run, its scope read, and the
+               meter recorded that scope. Unmet because no root key is
+               configured in production -- that is a custody decision for the
+               operator, and until it is made every call is unscoped."}
   {:gate/id :register-refreshed-on-a-schedule
    :gate/met true
    ;; 2026-08-31: met, and the last step was the one that mattered.
