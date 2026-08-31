@@ -31,7 +31,7 @@
   ship precomputed. **A path that needs rows and has none is refused, never
   answered from the summary**: an aggregate is not a substitute for a lookup,
   and a `found false` produced by an absent register would be a lie."
-  [{:keys [rows summary as-of source]}]
+  [{:keys [rows summary as-of source checked-at]}]
   (when-not (or (sequential? rows) (map? summary))
     (throw (ex-info "hanmoto.register: needs rows or a summary" {})))
   (when (and (some? rows) (not (sequential? rows)))
@@ -43,6 +43,7 @@
   (when (str/blank? (str source))
     (throw (ex-info "hanmoto.register: refusing rows with no source" {})))
   (cond-> {:as-of as-of :source (str source)
+           :checked-at checked-at
            :count (or (:count summary) (count rows))}
     rows (assoc :rows (vec rows))
     summary (assoc :summary summary)))
@@ -84,7 +85,26 @@
 
 (defn provenance
   "The block every answer carries. `:stale?` is left to the caller's policy --
-  this namespace reports age, it does not rule on freshness."
+  this namespace reports age, it does not rule on freshness.
+
+  ## Two dates, because they answer different questions
+
+  `:as-of` is when the DATA last changed. `:checked-at` is when it was last
+  re-derived from the corpus and found to be what it already was.
+
+  Keeping them apart is the whole point. If a rebuild stamped `:as-of` with the
+  time it ran, then re-deriving an unchanged snapshot would make it look new,
+  and **a register nobody has touched for a month would be indistinguishable
+  from one that changed this morning** -- the exact failure this namespace
+  exists to prevent, moved one field along.
+
+  Measured 2026-08-31: re-deriving from the corpus tip reproduced the
+  2026-08-09 categories exactly. Twenty-two days of age, zero drift. Only two
+  fields can say that; one cannot.
+
+  `:checked-at` is reported even when it is nil, because a register that has
+  never been re-derived must not look like one where the field does not apply."
   [reg now]
-  (cond-> {:as-of (:as-of reg) :source (:source reg) :hosts (:count reg)}
+  (cond-> {:as-of (:as-of reg) :source (:source reg) :hosts (:count reg)
+           :checked-at (:checked-at reg)}
     (age-days reg now) (assoc :age-days (age-days reg now))))

@@ -60,6 +60,12 @@
                (when summary
                  (register/of (cond-> {:summary summary
                                        :as-of (:as-of summary)
+                                       ;; When the register was last re-derived,
+                                       ;; which is not when its data last
+                                       ;; changed. nil travels through: never
+                                       ;; rebuilt must not read as not
+                                       ;; applicable.
+                                       :checked-at (:checked-at summary)
                                        :source (:source summary)}
                                 full (assoc :rows (:rows full)))))))))
 

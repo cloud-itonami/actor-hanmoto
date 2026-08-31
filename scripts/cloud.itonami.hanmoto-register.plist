@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>cloud.itonami.hanmoto-register</string>
+
+  <!-- Re-derives the register from the corpus and publishes it to R2.
+       pricing.edn's `register-refreshed-on-a-schedule` gate: selling a
+       directory implies keeping it current.
+
+       It runs on the operator host and not on a fleet node, because it needs
+       Cloudflare credentials and the fleet's standing invariant is that nodes
+       hold none.
+
+       Daily, because the corpus moves in batches: measured 2026-08-31, the two
+       files the census reads had not changed since 2026-08-09 while the repo
+       itself had commits as recent as 2026-08-30. Polling faster would not
+       find data sooner; it would only make `checked-at` a busier number.
+
+       Every run writes ~/.gftd/hanmoto-register.edn, including runs that
+       change nothing -- a job that writes only on change cannot be told from
+       one that never fired.
+
+       Install:
+         cp scripts/cloud.itonami.hanmoto-register.plist ~/Library/LaunchAgents/
+         launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/cloud.itonami.hanmoto-register.plist
+       Run it now:
+         launchctl kickstart -k gui/$(id -u)/cloud.itonami.hanmoto-register
+       Stop:
+         launchctl bootout gui/$(id -u)/cloud.itonami.hanmoto-register
+       See without publishing:
+         nbb scripts/refresh-register.cljs --dry-run -->
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/nbb</string>
+    <string>scripts/refresh-register.cljs</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/junkawasaki/github/com-junkawasaki/orgs/cloud-itonami/actor-hanmoto</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    <key>COM_JUNKAWASAKI_ROOT</key>
+    <string>/Users/junkawasaki/github/com-junkawasaki</string>
+    <key>HOME</key>
+    <string>/Users/junkawasaki</string>
+    <key>USER</key>
+    <string>junkawasaki</string>
+    <key>LOGNAME</key>
+    <string>junkawasaki</string>
+    <key>SHELL</key>
+    <string>/bin/zsh</string>
+  </dict>
+
+  <key>StartInterval</key>
+  <integer>86400</integer>
+  <key>RunAtLoad</key>
+  <false/>
+
+  <key>StandardOutPath</key>
+  <string>/Users/junkawasaki/.gftd/hanmoto-register.stdout.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/junkawasaki/.gftd/hanmoto-register.stdout.log</string>
+</dict>
+</plist>
