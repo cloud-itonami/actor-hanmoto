@@ -95,6 +95,24 @@
                three hanmoto rules and GET /gateway/hanmoto/x402/counts answers
                402 with a challenge naming this actor's payTo. There is a way to
                be paid."}
+  {:gate/id :priced-resources-not-served-free
+   :gate/met false
+   ;; 2026-08-31: measured, not assumed. The same resource, asked twice:
+   ;;   x402.nexus/gateway/hanmoto/x402/counts -> 402, Base USDC challenge
+   ;;     naming this actor's payTo, maxAmountRequired 1000
+   ;;   hanmoto.itonami.cloud/x402/counts      -> 200, the counts themselves
+   ;; The paywall lives entirely at the facilitator. Searching this actor for
+   ;; 402 finds no enforcement at all -- only the offer path strings and the
+   ;; facilitator URL. Anyone holding the origin URL reads the priced answer for
+   ;; nothing, and from the seller side a bypassed call and a paid one are the
+   ;; same shape: a 200 carrying data. That is this session's recurring defect
+   ;; wearing a new coat -- a control that could be skipped returns what a
+   ;; control that was satisfied returns.
+   :gate/note "The price is advertised at the gateway while the origin serves the
+               same resource unauthenticated. Measured 2026-08-31: gateway 402,
+               origin 200. Until the origin either verifies payment itself or
+               refuses calls that did not arrive through the facilitator, the
+               posted price is optional and the catalog entry overstates it."}
   {:gate/id :terms-for-a-directory-service
    :gate/met false
    :gate/note "No terms written for redistributing a host directory, including
