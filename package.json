@@ -5,7 +5,7 @@
     "shadow-cljs": "3.4.6"
   },
   "scripts": {
-    "build": "clojure -M:build",
-    "deploy": "npm run build && wrangler deploy --config appview/hanmoto/wrangler.jsonc"
+    "build": "node \"${COM_JUNKAWASAKI_ROOT:-../../..}/scripts/resource-guard.mjs\" run build -- clojure -M:build",
+    "deploy": "npm run build && node \"${COM_JUNKAWASAKI_ROOT:-../../..}/scripts/resource-guard.mjs\" run deploy -- wrangler deploy --config appview/hanmoto/wrangler.jsonc"
   }
 }
