@@ -90,7 +90,17 @@
                (mapv #(.charCodeAt bin %) (range (.-length bin))))
              (catch :default _ nil))))))
 
-(defn- principal-of [env req now]
+(defn- call-facts
+  "What this actor is willing to STATE about the call, for the token's checks to
+  reason against. The verifier's own knowledge -- never taken from the token,
+  which would let a token satisfy its own restrictions.
+
+  Two facts, both of which hanmoto can actually vouch for: which path was asked
+  for, and that this is a read. It sells a directory; there is no write."
+  [method path]
+  [['resource path] ['operation (if (= "GET" method) "read" "write")]])
+
+(defn- principal-of [env req now method path]
   (let [h (.-headers req)
         payer (.get h gateway/payer-header)
         token (.get h scope-header)]
@@ -105,7 +115,8 @@
               (scope/of {:token-bytes (bearer->bytes token)
                          :root-public-key (hex->bytes (aget env "BISCUIT_ROOT_PUBLIC_KEY"))
                          :verify-fn ed/verify
-                         :now now}))})))
+                         :now now
+                         :facts (call-facts method path)}))})))
 
 (defn- record-usage! [env recs]
   (js/Promise.all
@@ -149,7 +160,7 @@
                                             "/gateway/" offer/seller path)))))
 
       :else
-      (let [p (principal-of env req now)]
+      (let [p (principal-of env req now method path)]
         (if (principal/refused? p)
           ;; 401, not an anonymous answer. A token that did not authorise must
           ;; not be served as though none was presented.
