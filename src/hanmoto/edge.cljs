@@ -20,11 +20,14 @@
   ;; `undefined` になり、`offer-status` が `:unconfigured` を返し、**resources 空の
   ;; 正当な x402 文書**を配ることになる —— 設定漏れと「売る物が無い」が
   ;; 見分けられなくなる形で。`kotobase.edge-cacao` が同じ理由で同じ規約を持つ。
-  (:require [hanmoto.gateway :as gateway]
+  (:require [ed25519.sign :as ed]
+            [hanmoto.gateway :as gateway]
             [hanmoto.offer :as offer]
             [hanmoto.principal :as principal]
+            [hanmoto.scope :as scope]
             [hanmoto.register :as register]
-            [hanmoto.serve :as serve]))
+            [hanmoto.serve :as serve]
+            [clojure.string :as str]))
 
 (def scope-header "authorization")
 
@@ -60,17 +63,43 @@
                                        :source (:source summary)}
                                 full (assoc :rows (:rows full)))))))))
 
-(defn- principal-of [env req]
+(defn- hex->bytes
+  "Hex to a byte vector, or nil when the string is not hex. nil rather than a
+  partial parse: half a public key verifies nothing and must not look like a
+  configured one."
+  [s]
+  (when (and (string? s) (even? (count s)) (pos? (count s))
+             (re-matches #"^[0-9a-fA-F]+$" s))
+    (mapv #(js/parseInt (subs s % (+ % 2)) 16) (range 0 (count s) 2))))
+
+(defn- bearer->bytes
+  "`Authorization: Bearer <base64url>` to a byte vector, or nil."
+  [header]
+  (when (and (string? header) (re-find #"(?i)^bearer\s+" header))
+    (let [b64 (-> header (str/replace #"(?i)^bearer\s+" "")
+                  (str/replace "-" "+") (str/replace "_" "/"))
+          pad (case (mod (count b64) 4) 2 "==" 3 "=" 0 "" nil)]
+      (when pad
+        (try (let [bin (js/atob (str b64 pad))]
+               (mapv #(.charCodeAt bin %) (range (.-length bin))))
+             (catch :default _ nil))))))
+
+(defn- principal-of [env req now]
   (let [h (.-headers req)
         payer (.get h gateway/payer-header)
         token (.get h scope-header)]
     (principal/of
      {:payer payer
       :chain-id (some-> (aget env "CHAIN_ID") js/parseInt)
-      ;; A token cannot be verified without a root key. Refuse rather than
-      ;; ignore: see the namespace docstring.
+      ;; A presented token is decided, never ignored. `hanmoto.scope` refuses
+      ;; for a named reason -- no root key, malformed, bad signature, checks
+      ;; this implementation cannot evaluate, no scope, or more than one --
+      ;; and each of those must stay distinguishable from an anonymous call.
       :auth (when-not (or (nil? token) (= "" token))
-              {:allowed? false :reason :biscuit/no-root-key-configured})})))
+              (scope/of {:token-bytes (bearer->bytes token)
+                         :root-public-key (hex->bytes (aget env "BISCUIT_ROOT_PUBLIC_KEY"))
+                         :verify-fn ed/verify
+                         :now now}))})))
 
 (defn- record-usage! [env recs]
   (js/Promise.all
@@ -114,12 +143,12 @@
                                             "/gateway/" offer/seller path)))))
 
       :else
-      (let [p (principal-of env req)]
+      (let [p (principal-of env req now)]
         (if (principal/refused? p)
           ;; 401, not an anonymous answer. A token that did not authorise must
           ;; not be served as though none was presented.
           (js/Promise.resolve (json 401 {:error "unauthorized" :reason (str (:refuse p))}))
-          (-> (load-register env (clojure.string/starts-with? path offer/host-prefix))
+          (-> (load-register env (str/starts-with? path offer/host-prefix))
               (.then
                (fn [reg]
                  (if-not reg

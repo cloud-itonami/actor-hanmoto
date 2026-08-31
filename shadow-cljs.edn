@@ -1,5 +1,5 @@
 {:source-paths ["src"]
- :dependencies []
+ :deps true
  :builds
  {:worker {:target :esm
            :output-dir "dist/worker"
