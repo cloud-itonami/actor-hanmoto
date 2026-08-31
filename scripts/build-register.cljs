@@ -54,9 +54,11 @@
   ["data/corpus/nodeinfo/services.edn"
    "data/corpus/directory.plc/services.edn"])
 
-(defn- refuse! [msg]
-  (.write (.-stderr js/process) (str "REFUSING: " msg "\n"))
-  (.exit js/process 2))
+(defn- refuse!
+  ([msg] (refuse! :refused msg))
+  ([reason detail]
+   (.write (.-stderr js/process) (str "REFUSING: " (name reason) " -- " detail "\n"))
+   (.exit js/process 2)))
 
 (defn- corpus-commit-date
   "The corpus commit's own date, as the data's provenance.
@@ -93,14 +95,48 @@
             n (count rows)]
         (when (zero? n) (refuse! "census has no rows"))
         (fs/mkdirSync out-dir #js {:recursive true})
-        (let [summary {"as-of" as-of
+        (let [unclassified (->> rows
+                                (filter #(= "unknown" (get % "category")))
+                                (map #(get % "software"))
+                                (remove nil?)
+                                frequencies
+                                (sort-by (juxt (comp - val) key))
+                                (mapv (fn [[sw c]] [sw c])))
+              summary {"as-of" as-of
                        "checked-at" (.toISOString (js/Date.))
                        "source" source
-                       "hosts" n
+                       ;; `count`, not `hosts`. `hanmoto.register/of` reads
+                       ;; `:count`, and a summary that spells it otherwise
+                       ;; reports zero hosts while still answering 200.
+                       "count" n
                        "by_category" by-cat
                        "by_source" by-src
                        "unknown" unknown
+                       ;; The tail IS a product (`/x402/unclassified`, $0.002).
+                       ;; `hanmoto.serve` loads rows only for the host lookup,
+                       ;; so its fallback cannot rebuild this -- omit it and the
+                       ;; product answers an empty list with a 200.
+                       "unclassified" unclassified
                        "unknown_ratio" (/ (js/Math.round (* 1e6 (/ unknown n))) 1e6)}]
+          ;; Refuse to publish a summary missing anything the product reads.
+          ;;
+          ;; Measured 2026-08-31, the hard way: an earlier version of this file
+          ;; wrote `hosts` instead of `count` and left `unclassified` out. Both
+          ;; reached R2 and served 200 -- the host count read zero and the
+          ;; $0.002 tail product returned an empty list. Nothing went red,
+          ;; because a summary missing a key looks exactly like a summary.
+          (let [required ["as-of" "source" "count" "by_category" "by_source"
+                          "unknown" "unknown_ratio" "unclassified"]
+                missing (remove #(some? (get summary %)) required)
+                empties (filter #(let [v (get summary %)]
+                                   (and (coll? v) (empty? v)))
+                                required)]
+            (when (seq missing)
+              (refuse! :summary-incomplete
+                       (str "keys the product reads are absent: " (str/join ", " missing))))
+            (when (seq empties)
+              (refuse! :summary-empty-field
+                       (str "present but empty: " (str/join ", " empties)))))
           (fs/writeFileSync (path/join out-dir "summary.json")
                             (js/JSON.stringify (clj->js summary)))
           (fs/writeFileSync (path/join out-dir "register.json")
