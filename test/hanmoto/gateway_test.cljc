@@ -65,3 +65,18 @@
       (is (offer/sells? method path-prefix) (str method " " path-prefix)))
     (is (not (offer/sells? "GET" "/health")))
     (is (not (offer/sells? "GET" "/.well-known/x402")))))
+
+(deftest terms-are-free-to-read
+  (testing "買い手は、読むのに金を払わないと同意できない"
+    (is (not (offer/sells? "GET" "/terms")))
+    (is (not (offer/sells? "GET" "/health")))))
+
+(deftest the-licence-facts-say-what-was-measured
+  (testing "prose ではなく data。TERMS.md と /terms が同じ 1 箇所を指す"
+    (let [ls offer/upstream-licensing]
+      (is (= 2 (count ls)))
+      (is (= #{:per-server :none-published} (set (map :license-kind ls)))
+          "どちらも集合体の再配布を許していない —— だから答えを売る")
+      (is (every? #(contains? % :rows) ls))
+      (is (= 27307 (reduce + (map :rows ls)))
+          "行数の合計が register の host 数と一致する。ずれたら片方が古い"))))

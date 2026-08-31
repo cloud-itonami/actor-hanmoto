@@ -143,6 +143,18 @@
       (js/Promise.resolve
        (json 200 (offer/document (aget env "TREASURY_ADDR") ["transaction"])))
 
+      ;; Free, and it has to be: a buyer cannot agree to terms it must pay to
+      ;; read. Serves the licence facts as DATA from `hanmoto.offer` and points
+      ;; at the prose, rather than restating the prose here where the two
+      ;; copies would drift.
+      (= path "/terms")
+      (js/Promise.resolve
+       (json 200 {:terms offer/terms-url
+                  :sells (mapv :path offer/priced-resources)
+                  :upstream-licensing offer/upstream-licensing
+                  :note "Answers are sold, not the register. No upstream licence
+                         covers the aggregate, so none is passed on."}))
+
       (= path "/health")
       (js/Promise.resolve (json 200 {:ok true :seller offer/seller :at now}))
 
