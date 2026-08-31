@@ -1,0 +1,11 @@
+/** @const {ShadowJS} */ var Promise;
+/** @const {ShadowJS} */ var Response;
+/** @const {ShadowJS} */ var TextEncoder;
+/** @const {ShadowJS} */ var URL;
+/** @const {ShadowJS} */ var Uint8Array;
+/** @const {ShadowJS} */ var crypto;
+/** @const {ShadowJS} */ var module;
+ShadowJS.prototype.all;
+ShadowJS.prototype.from;
+ShadowJS.prototype.resolve;
+ShadowJS.prototype.stringify;

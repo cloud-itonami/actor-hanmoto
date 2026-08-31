@@ -1,0 +1,19 @@
+// hanmoto 版元 — the register of who publishes.
+//
+// Reads only. Payment is verified by the x402 gateway, which proxies here and
+// sets x-402-payer; this origin implements no 402 of its own (ADR-2607321200
+// §4b: the gateway route needs no origin code, the self-hosted 402 needs ~540
+// lines of it).
+{
+  "name": "cloud-itonami-hanmoto",
+  "main": "../../dist/worker/worker.js",
+  "compatibility_date": "2026-08-31",
+  "routes": [{ "pattern": "hanmoto.itonami.cloud", "custom_domain": true }],
+  "r2_buckets": [{ "binding": "REGISTER", "bucket_name": "hanmoto-register" }],
+  "kv_namespaces": [{ "binding": "USAGE", "id": "ab287965332b40019a86e1727ec5ac43" }],
+  "vars": {
+    // The junbi Safe, same payTo every other seller in this catalog uses.
+    "TREASURY_ADDR": "0xA00366234D29d4F882088048c0B2fa0dB7302D4E",
+    "CHAIN_ID": "8453"
+  }
+}

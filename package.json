@@ -1,0 +1,5 @@
+{
+  "name": "cloud-itonami-hanmoto",
+  "private": true,
+  "devDependencies": { "shadow-cljs": "3.4.6" }
+}

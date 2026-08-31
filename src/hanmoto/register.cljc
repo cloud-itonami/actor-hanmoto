@@ -19,13 +19,22 @@
 (defn- iso? [s] (boolean (and (string? s) (re-matches #"\d{4}-\d{2}-\d{2}.*" s))))
 
 (defn of
-  "-> `{:rows [...] :as-of \"…\" :source \"…\" :count n}` or throws.
+  "-> `{:rows [...] :summary {...} :as-of \"…\" :source \"…\" :count n}` or throws.
 
   **Refuses rows with no provenance.** A register whose age nobody recorded
   cannot report its age, and an answer that omits the as-of is indistinguishable
-  from one that is current."
-  [{:keys [rows as-of source]}]
-  (when-not (sequential? rows)
+  from one that is current.
+
+  Either `:rows` or `:summary` may be absent. The full register is 27,307 rows
+  and a Worker that parsed it on every cold start to answer a category count
+  would be paying ten megabytes for five kilobytes of answer -- so aggregates
+  ship precomputed. **A path that needs rows and has none is refused, never
+  answered from the summary**: an aggregate is not a substitute for a lookup,
+  and a `found false` produced by an absent register would be a lie."
+  [{:keys [rows summary as-of source]}]
+  (when-not (or (sequential? rows) (map? summary))
+    (throw (ex-info "hanmoto.register: needs rows or a summary" {})))
+  (when (and (some? rows) (not (sequential? rows)))
     (throw (ex-info "hanmoto.register: rows must be a sequence" {})))
   (when-not (iso? as-of)
     (throw (ex-info "hanmoto.register: refusing rows with no as-of -- an answer
@@ -33,7 +42,12 @@
                      current one" {:as-of as-of})))
   (when (str/blank? (str source))
     (throw (ex-info "hanmoto.register: refusing rows with no source" {})))
-  {:rows (vec rows) :as-of as-of :source (str source) :count (count rows)})
+  (cond-> {:as-of as-of :source (str source)
+           :count (or (:count summary) (count rows))}
+    rows (assoc :rows (vec rows))
+    summary (assoc :summary summary)))
+
+(defn has-rows? [reg] (sequential? (:rows reg)))
 
 (defn- parse-int
   "Digits -> int, or nil. The one place a platform difference is allowed in this

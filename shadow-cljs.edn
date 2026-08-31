@@ -1,0 +1,7 @@
+{:source-paths ["src"]
+ :dependencies []
+ :builds
+ {:worker {:target :esm
+           :output-dir "dist/worker"
+           :modules {:worker {:exports {default hanmoto.edge/default-export}}}
+           :compiler-options {:infer-externs :auto}}}}

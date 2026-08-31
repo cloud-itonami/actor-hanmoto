@@ -103,14 +103,30 @@
                                       :scope scope :instant instant})]
         (cond
           (= (:path-prefix res) offer/counts-prefix)
-          (json-ok (with-provenance (census/by-category rows) register instant) recs)
+          (json-ok (with-provenance
+                     (or (some-> (:summary register)
+                                 (select-keys [:by_category :unknown :unknown_ratio :by_source])
+                                 not-empty)
+                         (census/by-category rows))
+                     register instant)
+                   recs)
 
           (= (:path-prefix res) offer/tail-prefix)
           (json-ok (with-provenance
-                     {:unclassified (census/unclassified-software rows)
+                     {:unclassified (or (:unclassified (:summary register))
+                                        (census/unclassified-software rows))
                       :note "Outside the declared vocabulary. Not the nearest box."}
                      register instant)
                    recs)
+
+          ;; **集計で lookup に答えない。** 名簿を読んでいないのに `found false` を
+          ;; 返したら、それは「無い」ではなく「見ていない」であり、区別が付かない。
+          (and (= (:path-prefix res) offer/host-prefix)
+               (not (register/has-rows? register)))
+          (err 503 {:error "register-not-loaded"
+                    :note "This lookup needs the full register and only the summary
+                           is loaded. Answering found=false from an aggregate would
+                           report not-looked-at as not-present."})
 
           (= (:path-prefix res) offer/host-prefix)
           (let [domain (subs path (count offer/host-prefix))

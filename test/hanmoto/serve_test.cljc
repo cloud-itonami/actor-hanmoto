@@ -150,3 +150,15 @@
         b (serve/handle ctx (req "/x402/counts") (who "did:pkh:x" "other"))]
     (is (not= (map :key (:usage a)) (map :key (:usage b)))
         "scope が違えば鍵が違う。その scope を決めるのは host であって呼び手ではない")))
+
+(deftest an-aggregate-must-not-answer-a-lookup
+  (let [summary-only (register/of {:summary {:by_category {"blog" 1} :count 27307}
+                                   :as-of "2026-08-09T00:00:00Z" :source "corpus"})
+        ctx2 {:register summary-only :digest fake-digest}]
+    (testing "集計だけで counts には答えられる"
+      (is (= 200 (:status (serve/handle ctx2 (req "/x402/counts") (who nil))))))
+    (testing "lookup は拒否する —— 名簿を読んでいないのに found=false を返したら、
+              『無い』と『見ていない』が区別できなくなる"
+      (let [r (serve/handle ctx2 (req "/x402/host/a.example") (who nil))]
+        (is (= 503 (:status r)))
+        (is (= "register-not-loaded" (get-in r [:body :error])))))))
