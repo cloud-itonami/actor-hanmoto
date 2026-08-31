@@ -16,3 +16,9 @@ node_modules/
 # build that succeeded.
 dist/
 .shadow-cljs/
+
+# The sanctioned path binds the two: `npm run deploy` builds, then ships. It
+# closes the OTHER route to the same failure -- nexus-x402 does not track its
+# bundle and was still rolled back this morning, because a stale artifact in
+# somebody's WORKING TREE reaches production just as easily as a committed one.
+# Untracking removes one route; building first removes the other.
