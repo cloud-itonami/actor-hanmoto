@@ -58,9 +58,18 @@
  :pricing/gates
  [{:gate/id :meter-running
    :gate/met false
-   :gate/note "hanmoto.usage is pure and has no host wired to it. Nothing has
-               been recorded, and a month that was not measured cannot be
-               measured afterwards."}
+   ;; 2026-08-31: narrowed, not closed. The host seam now exists --
+   ;; `hanmoto.serve/handle` returns the response and the usage it incurred in
+   ;; one value, so an answer that was served and not counted is not
+   ;; expressible, and the meter has been run end to end (2 callers over 2
+   ;; months, de-duplicated at the key, folded by `usage/report`, asserted).
+   ;;
+   ;; What remains false is narrower and still decisive.
+   :gate/note "The host seam exists and is exercised: hanmoto.serve returns usage
+               with every answer, and hanmoto.serve-test runs the meter end to
+               end. Still unmet because nothing is deployed, no caller has
+               arrived, and no store persists a record -- a meter exercised in a
+               test has not measured a month."}
   {:gate/id :register-refreshed-on-a-schedule
    :gate/met false
    :gate/note "The register is a 2026-08-09 snapshot from the upstream corpus.
