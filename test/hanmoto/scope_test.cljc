@@ -1,5 +1,6 @@
 (ns hanmoto.scope-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [biscuit.wire :as wire]
+            [clojure.test :refer [deftest is testing]]
             [ed25519.sign :as ed]
             [hanmoto.scope :as scope]))
 
@@ -71,3 +72,62 @@
       (let [r (of {:token-bytes b})]
         (is (contains? r :reason))
         (is (qualified-keyword? (:reason r)))))))
+
+;; ── minting a token this actor accepts ──────────────────────────────────────
+;;
+;; The gate said no wire token could be minted here. That was wrong:
+;; `biscuit.wire/encode-authority-token` writes a facts-only authority block,
+;; and a billing scope IS a fact. This is the end-to-end proof -- a token minted
+;; by this workspace, verified and scoped by this actor, with no fixture and no
+;; borrowed key.
+
+(defn- keypair [seed-byte]
+  (let [seed (vec (repeat 32 seed-byte))
+        sk (ed/secret-key! seed)]
+    {:seed seed :secret sk :public (:public sk)}))
+
+(defn- mint
+  "-> token octets carrying `facts`, signed by `root`."
+  [root facts]
+  (let [nk (keypair 7)]
+    (wire/encode-authority-token
+     {:facts facts
+      :root-private-key (:secret root)
+      :next-secret (:seed nk)
+      :next-public-key (:public nk)
+      :sign-fn (fn [sk payload] (ed/sign sk payload))})))
+
+(deftest a-token-this-workspace-minted-is-accepted-and-carries-its-scope
+  (testing "発行 → 検証 → scope 抽出が、fixture も借り物の鍵も無しで通る"
+    (let [root (keypair 3)
+          t (mint root '[[scope "kotoba://graph/acme"]])
+          r (scope/of {:token-bytes t :root-public-key (:public root)
+                       :verify-fn ed/verify :now "2026-08-31T00:00:00Z"})]
+      (is (true? (:allowed? r)) (pr-str r))
+      (is (= "kotoba://graph/acme" (:scope r))))))
+
+(deftest a-token-minted-under-a-different-root-is-refused
+  (testing "負のコントロール —— 受理が『署名を見ていないから通った』ではない"
+    (let [t (mint (keypair 3) '[[scope "kotoba://graph/acme"]])
+          r (scope/of {:token-bytes t :root-public-key (:public (keypair 9))
+                       :verify-fn ed/verify :now "2026-08-31T00:00:00Z"})]
+      (is (false? (:allowed? r)))
+      (is (= :biscuit/signature-mismatch (:reason r))))))
+
+(deftest two-scopes-in-one-minted-token-are-refused-not-picked
+  (testing "課金先を推測しない。2 つは『どちらでもよい』ではなく
+            『誰に請求するか言っていない』"
+    (let [root (keypair 3)
+          t (mint root '[[scope "kotoba://graph/acme"] [scope "kotoba://graph/beta"]])
+          r (scope/of {:token-bytes t :root-public-key (:public root)
+                       :verify-fn ed/verify :now "2026-08-31T00:00:00Z"})]
+      (is (false? (:allowed? r)))
+      (is (= :biscuit/ambiguous-scope (:reason r))))))
+
+(deftest an-expired-minted-token-is-refused
+  (let [root (keypair 3)
+        t (mint root '[[scope "kotoba://graph/acme"] [before "2026-08-01T00:00:00Z"]])
+        r (scope/of {:token-bytes t :root-public-key (:public root)
+                     :verify-fn ed/verify :now "2026-08-31T00:00:00Z"})]
+    (is (false? (:allowed? r)))
+    (is (= :biscuit/expired (:reason r)))))
