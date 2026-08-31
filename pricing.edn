@@ -72,8 +72,19 @@
                test has not measured a month."}
   {:gate/id :register-refreshed-on-a-schedule
    :gate/met false
-   :gate/note "The register is a 2026-08-09 snapshot from the upstream corpus.
-               Selling a directory implies keeping it current."}
+   ;; 2026-08-31: narrowed. Every answer now carries the register's as-of, its
+   ;; source and its age in days (`hanmoto.register/provenance`), and rows
+   ;; without provenance are refused at load. So a buyer can no longer be sold a
+   ;; snapshot as current -- which was the sharper half of this gate, because an
+   ;; answer built from a stale register looked exactly like one built from a
+   ;; live register.
+   ;;
+   ;; Still unmet: nothing refreshes it.
+   :gate/note "Answers carry as-of, source and age-days, and undated rows are
+               refused at load -- a snapshot can no longer pass as current. Still
+               unmet because nothing refreshes the register: it remains the
+               2026-08-09 upstream snapshot, and selling a directory implies
+               keeping it current."}
   {:gate/id :catalog-entry
    :gate/met false
    :gate/note "No x402 SKU names this actor, so there is no way to be paid.

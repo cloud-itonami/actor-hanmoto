@@ -21,9 +21,17 @@
   (:require [clojure.string :as str]
             [hanmoto.census :as census]
             [hanmoto.offer :as offer]
+            [hanmoto.register :as register]
             [hanmoto.usage :as usage]))
 
 (defn- json-ok [body records] {:status 200 :body body :usage records})
+
+(defn- with-provenance
+  "Every answer says how old the register is. **Not optional** -- an answer that
+  omits its as-of is indistinguishable from one built from a live register, and
+  that is the way a directory gets sold as current."
+  [body reg now]
+  (assoc body :register (register/provenance reg now)))
 (defn- err [status body] {:status status :body body :usage []})
 
 (defn- records-for
@@ -45,8 +53,9 @@
   "-> `{:status n :body v :usage [records]}`.
 
   `req` is `{:method :path :caller :scope :instant}`; `digest` is injected."
-  [{:keys [rows digest]} {:keys [method path caller scope instant] :as _req}]
-  (let [res (offer/resource-for method path)]
+  [{:keys [register digest] :as _ctx} {:keys [method path caller scope instant] :as _req}]
+  (let [res (offer/resource-for method path)
+        rows (:rows register)]
     (cond
       (nil? res)
       (err 404 {:error "not-for-sale"
@@ -66,11 +75,13 @@
                                       :scope scope :instant instant})]
         (cond
           (= (:path-prefix res) offer/counts-prefix)
-          (json-ok (census/by-category rows) recs)
+          (json-ok (with-provenance (census/by-category rows) register instant) recs)
 
           (= (:path-prefix res) offer/tail-prefix)
-          (json-ok {:unclassified (census/unclassified-software rows)
-                    :note "Outside the declared vocabulary. Not the nearest box."}
+          (json-ok (with-provenance
+                     {:unclassified (census/unclassified-software rows)
+                      :note "Outside the declared vocabulary. Not the nearest box."}
+                     register instant)
                    recs)
 
           (= (:path-prefix res) offer/host-prefix)
@@ -80,9 +91,11 @@
             ;; consumed the answer "not in this register", which is an answer.
             ;; Not billing it would also make absence cheaper than presence,
             ;; which is a scraping incentive.
-            (json-ok (or hit {:domain domain :found false
-                              :note "Not in this register. That is not the same as
-                                     this host not existing."})
+            (json-ok (with-provenance
+                       (or hit {:domain domain :found false
+                                :note "Not in this register. That is not the same as
+                                       this host not existing."})
+                       register instant)
                      recs))
 
           :else

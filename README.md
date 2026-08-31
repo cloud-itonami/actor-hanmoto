@@ -60,6 +60,19 @@ unknown  1,628   not in the vocabulary — NOT pushed into the nearest box
 The 6.0% unknown is reported on every answer. Rounding the tail into
 neighbouring categories would make the table look finished and the answer false.
 
+## Every answer says how old it is
+
+`hanmoto.register` carries the snapshot's `as-of`, its source and its age in
+days, and **rows without provenance are refused at load**.
+
+The failure that closes is not that a snapshot is old — it is that an answer
+built from a snapshot **looked exactly like one built from a live register**.
+That is how a directory gets sold as current.
+
+Age is computed from the ISO date arithmetically rather than through a platform
+`Date`, so the same instant gives the same age on the JVM and in a Worker. When
+it cannot be computed the answer is `nil`, never `0` — zero reads as fresh.
+
 ## Metering
 
 `hanmoto.usage`. The shape is taken from `authn.usage` (ADR-2608110200), the one

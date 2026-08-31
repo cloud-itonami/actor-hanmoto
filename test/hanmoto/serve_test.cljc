@@ -2,7 +2,8 @@
   (:require [clojure.test :refer [deftest is testing]]
             [hanmoto.serve :as serve]
             [hanmoto.offer :as offer]
-            [hanmoto.usage :as usage]))
+            [hanmoto.usage :as usage]
+            [hanmoto.register :as register]))
 
 (defn- fake-digest [s] (str "d" (hash s)))
 
@@ -11,7 +12,9 @@
    {"domain" "b.example" "software" "mastodon" "source" "self-reported"}
    {"domain" "c.example" "software" "somethingnew" "source" "self-reported"}])
 
-(def ctx {:rows rows :digest fake-digest})
+(def reg (register/of {:rows rows :as-of "2026-08-09T00:00:00Z"
+                         :source "kotoba-lang/global-accounts-datoms"}))
+(def ctx {:register reg :digest fake-digest})
 
 (defn- req [path & {:keys [caller instant scope method]
                     :or {method "GET" instant "2026-08-15T00:00:00Z" scope "acme"}}]
@@ -103,3 +106,25 @@
       (is (= 1 (get-in r [["acme" "2026-09"] :mac]))))
     (testing "読めなかった記録は 0 —— 何かを黙って落としていない"
       (is (nil? (:unreadable r))))))
+
+;; ── 名簿は年齢を名乗る ──────────────────────────────────────────────────────
+
+(deftest a-register-without-provenance-is-refused
+  (testing "日付の無いスナップショットから作った答えは、現在の名簿から作った
+            答えと見分けが付かない。だから読み込みの時点で拒否する"
+    (is (thrown? #?(:clj Exception :cljs js/Error)
+                 (register/of {:rows [] :source "x"})))
+    (is (thrown? #?(:clj Exception :cljs js/Error)
+                 (register/of {:rows [] :as-of "2026-08-09T00:00:00Z" :source ""})))))
+
+(deftest every-answer-says-how-old-the-register-is
+  (doseq [path ["/x402/counts" "/x402/unclassified" "/x402/host/a.example"]]
+    (let [b (:body (serve/handle ctx (req path :instant "2026-08-31T00:00:00Z")))]
+      (is (= "2026-08-09T00:00:00Z" (get-in b [:register :as-of])) path)
+      (is (= 22 (get-in b [:register :age-days])) path)
+      (is (= 3 (get-in b [:register :hosts])) path))))
+
+(deftest age-is-nil-not-zero-when-it-cannot-be-computed
+  (testing "0 は『新しい』と読める。測れなかったことを新しさとして出さない"
+    (is (nil? (register/age-days reg "not-an-instant")))
+    (is (nil? (register/age-days {:as-of nil} "2026-08-31T00:00:00Z")))))
