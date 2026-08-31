@@ -100,10 +100,19 @@
    :gate/note "No terms written for redistributing a host directory, including
                what a buyer may do with it."}
   {:gate/id :unknown-tail-disclosed-in-product
-   :gate/met false
-   :gate/note "6.0% of hosts are outside the category vocabulary. The API must
-               return that number with every categorical answer, not just the
-               README."}]
+   :gate/met true
+   ;; 2026-08-31: met, and it was met before it was recorded -- the live
+   ;; /x402/counts returns "unknown":1628 and "unknown_ratio":0.059618 beside the
+   ;; category counts, because `census/by-category` has always returned them
+   ;; together and `serve` never had a path that dropped them.
+   ;;
+   ;; Left unmet in the ledger for a while after it was true, which is the same
+   ;; class as a gate describing a solved problem: a book that lags the thing it
+   ;; describes stops being read.
+   :gate/note "Met. Every categorical answer carries :unknown and
+               :unknown_ratio -- live /x402/counts returns 1628 and 0.059618
+               beside the counts. The unclassified tail is a product field, not
+               a README footnote."}]
 
  :pricing/disclosures
  ["The register holds hosts, never accounts. Answering how many must not require

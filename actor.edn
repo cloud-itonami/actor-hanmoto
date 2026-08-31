@@ -10,6 +10,11 @@
   :actor/handle "hanmoto.itonami.cloud"
   :actor/graph-type "cloud.itonami.hanmoto.register"
   :actor/published "2026-08-31"
+  :actor/x402-seller "hanmoto"
+  ;; The name the facilitator knows this actor by. **Declared, because it is not
+  ;; the repo name** -- the repo is actor-hanmoto and the seller is hanmoto, and
+  ;; a detector that joins the catalog on the repo name reads a live seller as
+  ;; having no SKU.
   :actor/subject "the register of publishing hosts on the open web"
   :actor/boundary "kawaraban carries what was said; hanmoto carries who can say it"}
 ]
