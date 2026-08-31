@@ -1,0 +1,87 @@
+;; The price book. DATA, not code -- the shape is ADR-2608110200's, taken from
+;; cloud-itonami-isic-6311-identity/pricing.edn rather than invented.
+;;
+;; This file is the only place a number lives, so a price change is a one-file
+;; edit and never a deploy of the thing people call.
+;;
+;; ## Nothing here is published
+;;
+;; `:plan/status :proposed` on every plan, and the gates below are not met.
+;; Numbers exist so they can be argued with, not because anyone may be billed
+;; from them.
+;;
+;; ## Dimensions match what is actually measured
+;;
+;; `hanmoto.usage` records exactly two things, and this file may only price
+;; those:
+;;
+;;   :query  one register query answered. Load.
+;;   :mac    monthly active caller, de-duplicated at write time on the hashed
+;;           did:pkh of the payer. Customers.
+;;
+;; A dimension not in that list cannot be honoured -- pricing a number nobody
+;; counts is what makes an invoice indefensible.
+
+{:pricing/version 1
+ :pricing/currency "USD"
+ :pricing/updated "2026-08-31"
+ :pricing/authority "ADR-2608110200"
+
+ :pricing/plans
+ [{:plan/id :open
+   :plan/name "Open"
+   :plan/status :proposed
+   :plan/monthly-base 0
+   :plan/included {:query 1000}
+   :plan/overage {}
+   ;; No overage on the open plan: past the included queries the answer is
+   ;; "choose a plan", not a surprise invoice.
+   :plan/hard-cap {:query 1000}
+   :plan/features [:category-counts :host-lookup :software-distribution]
+   :plan/support :community
+   :plan/sla nil}
+
+  {:plan/id :registry
+   :plan/name "Registry"
+   :plan/status :proposed
+   :plan/monthly-base 25
+   :plan/included {:query 100000 :mac 5}
+   :plan/overage {:query 0.0002}
+   :plan/hard-cap nil
+   :plan/features [:category-counts :host-lookup :software-distribution
+                   :bulk-export :provenance-split :unknown-tail]
+   :plan/support :email
+   :plan/sla nil}]
+
+ ;; What must be true before anyone is charged. Answered from data rather than
+ ;; from someone remembering.
+ :pricing/gates
+ [{:gate/id :meter-running
+   :gate/met false
+   :gate/note "hanmoto.usage is pure and has no host wired to it. Nothing has
+               been recorded, and a month that was not measured cannot be
+               measured afterwards."}
+  {:gate/id :register-refreshed-on-a-schedule
+   :gate/met false
+   :gate/note "The register is a 2026-08-09 snapshot from the upstream corpus.
+               Selling a directory implies keeping it current."}
+  {:gate/id :catalog-entry
+   :gate/met false
+   :gate/note "No x402 SKU names this actor, so there is no way to be paid.
+               See scripts/itonami-actor-pnl.cljs."}
+  {:gate/id :terms-for-a-directory-service
+   :gate/met false
+   :gate/note "No terms written for redistributing a host directory, including
+               what a buyer may do with it."}
+  {:gate/id :unknown-tail-disclosed-in-product
+   :gate/met false
+   :gate/note "6.0% of hosts are outside the category vocabulary. The API must
+               return that number with every categorical answer, not just the
+               README."}]
+
+ :pricing/disclosures
+ ["The register holds hosts, never accounts. Answering how many must not require
+   the ability to answer who."
+  "self-reported and observed provenance are never summed into one number."
+  "Scale figures (users, posts) are the host's own declaration and are not
+   verified."]}

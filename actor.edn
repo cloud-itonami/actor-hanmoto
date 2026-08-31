@@ -1,0 +1,15 @@
+;; Governed actor manifest. ns-prefixed convention (`:actor/*`).
+;;
+;; ⚠ Two conventions for this file exist in cloud-itonami -- 24 repos use bare
+;; `:did`, 6 use `:actor/did`, 1 nests under `:actor`. Measured 2026-08-31 by
+;; scripts/verify-actor-metering.cljs, whose first version read only the second
+;; and so admitted 6 of 31. Readers must accept all of them.
+[
+ {:db/id -1
+  :actor/did "did:web:cloud-itonami.github.io:actor-hanmoto"
+  :actor/handle "hanmoto.itonami.cloud"
+  :actor/graph-type "cloud.itonami.hanmoto.register"
+  :actor/published "2026-08-31"
+  :actor/subject "the register of publishing hosts on the open web"
+  :actor/boundary "kawaraban carries what was said; hanmoto carries who can say it"}
+]
