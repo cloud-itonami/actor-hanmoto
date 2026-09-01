@@ -141,7 +141,8 @@
     (cond
       (= path "/.well-known/x402")
       (js/Promise.resolve
-       (json 200 (offer/document (aget env "TREASURY_ADDR") ["transaction"])))
+       (json 200 (offer/document (aget env "TREASURY_ADDR") ["transaction"]
+                                 (aget env "TREASURY_ADDR_TESTNET"))))
 
       ;; Free, and it has to be: a buyer cannot agree to terms it must pay to
       ;; read. Serves the licence facts as DATA from `hanmoto.offer` and points

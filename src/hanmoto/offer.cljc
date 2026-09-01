@@ -121,8 +121,21 @@
   "The `/.well-known/x402` body. Spec-shaped in every case -- an empty
   `resources` is legal and clients must not break on it, so the diagnosis lives
   in `offer-status` rather than leaking operational state to buyers."
-  [treasury-addr schemes]
-  (let [{:keys [selling? pay-to]} (offer-status treasury-addr)]
+  ([treasury-addr schemes] (document treasury-addr schemes nil))
+  ([treasury-addr schemes testnet-addr]
+  (let [{:keys [selling? pay-to]} (offer-status treasury-addr)
+        ;; Per network, because they are DIFFERENT destinations. Measured
+        ;; 2026-09-01: the family payTo 0xA00366…D4E is a Safe on Ethereum
+        ;; mainnet with no contract on Base Sepolia -- code 0, nonce 0 -- and no
+        ;; private key behind it, so a testnet payment sent there is destroyed
+        ;; rather than misrouted. The testnet rail settles to the x402.nexus
+        ;; faucet pool instead, so what the faucet hands out comes back when it
+        ;; is spent.
+        pay-to-for (fn [n] (if (= n "base-sepolia") testnet-addr pay-to))
+        ;; A network with nowhere to settle is not offered. Falling back to the
+        ;; mainnet Safe is the mistake that burns the payment, and it looks like
+        ;; a working offer from every angle a buyer can see.
+        nets (filterv #(some? (pay-to-for %)) networks)]
     {:x402Version 1
      :seller seller
      :schemes (vec schemes)
@@ -130,10 +143,10 @@
      ;; (seller, method, path, chain), so these are distinct listings rather
      ;; than one overwriting the other.
      :resources (if selling?
-                  (vec (for [r priced-resources n networks]
+                  (vec (for [r priced-resources n nets]
                          {:path (:path r)
                           :method (:method r)
                           :description (:description r)
                           :price {:usd (:usd r) :asset "USDC" :network n
-                                  :payTo pay-to}}))
-                  [])}))
+                                  :payTo (pay-to-for n)}}))
+                  [])})))

@@ -83,7 +83,11 @@
 
 (deftest every-resource-is-offered-on-every-network
   (testing "同じ資源を 2 つの network で出す。買い手は自分の allowlist で選ぶ"
-    (let [doc (offer/document "0xA00366234D29d4F882088048c0B2fa0dB7302D4E" ["transaction"])
+    ;; testnet の payTo を渡す。渡さないと base-sepolia は出ない —— mainnet の
+    ;; Safe は Base Sepolia に契約が無く、そこへ送られた支払いは消えるので、
+    ;; 行き先が無い network は出さないのが正しい挙動。
+    (let [doc (offer/document "0xA00366234D29d4F882088048c0B2fa0dB7302D4E" ["transaction"]
+                              "0xD030410BABA777b1e7FacABf679295641203628A")
           rs (:resources doc)]
       (is (= (* (count offer/priced-resources) (count offer/networks)) (count rs)))
       (is (= #{"base" "base-sepolia"} (set (map #(get-in % [:price :network]) rs))))
