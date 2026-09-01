@@ -67,6 +67,16 @@
     :bulk-export? true
     :note "Published for replication (relays depend on it); no dataset licence attached."}])
 
+(def networks
+  "Where each resource is sold. The same answer is offered on both, priced the
+  same, and a buyer picks by its own network allowlist -- which is how a buyer
+  under a testnet grant takes the testnet listing and never the other.
+
+  base-sepolia is here so a paid path can be demonstrated without anyone
+  moving value. `nexus.apply/settleable-networks` admits it and marks it a
+  testnet, so nothing downstream infers that from the name."
+  ["base" "base-sepolia"])
+
 (def sold-path-prefixes (mapv :path-prefix priced-resources))
 
 (defn resource-for
@@ -116,12 +126,14 @@
     {:x402Version 1
      :seller seller
      :schemes (vec schemes)
+     ;; One entry per resource PER NETWORK. The registry keys a rule by
+     ;; (seller, method, path, chain), so these are distinct listings rather
+     ;; than one overwriting the other.
      :resources (if selling?
-                  (mapv (fn [r]
-                          {:path (:path r)
-                           :method (:method r)
-                           :description (:description r)
-                           :price {:usd (:usd r) :asset "USDC" :network "base"
-                                   :payTo pay-to}})
-                        priced-resources)
+                  (vec (for [r priced-resources n networks]
+                         {:path (:path r)
+                          :method (:method r)
+                          :description (:description r)
+                          :price {:usd (:usd r) :asset "USDC" :network n
+                                  :payTo pay-to}}))
                   [])}))

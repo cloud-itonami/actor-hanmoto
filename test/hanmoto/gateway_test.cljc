@@ -80,3 +80,14 @@
       (is (every? #(contains? % :rows) ls))
       (is (= 27307 (reduce + (map :rows ls)))
           "行数の合計が register の host 数と一致する。ずれたら片方が古い"))))
+
+(deftest every-resource-is-offered-on-every-network
+  (testing "同じ資源を 2 つの network で出す。買い手は自分の allowlist で選ぶ"
+    (let [doc (offer/document "0xA00366234D29d4F882088048c0B2fa0dB7302D4E" ["transaction"])
+          rs (:resources doc)]
+      (is (= (* (count offer/priced-resources) (count offer/networks)) (count rs)))
+      (is (= #{"base" "base-sepolia"} (set (map #(get-in % [:price :network]) rs))))
+      (testing "価格は network で変わらない —— testnet は割引ではなく同じ主張の稽古"
+        (is (= 1 (count (set (map #(count (set (map (fn [x] (get-in x [:price :usd]))
+                                                    (filter (fn [x] (= (:path %) (:path x))) rs))))
+                                  rs)))))))))
