@@ -14,6 +14,14 @@
   "vars": {
     // The junbi Safe, same payTo every other seller in this catalog uses.
     "TREASURY_ADDR": "0xA00366234D29d4F882088048c0B2fa0dB7302D4E",
+    // Where a base-sepolia payment settles: the x402.nexus faucet pool, whose
+    // key is in kagi as FAUCET_BASE_SEPOLIA_KEY. NOT the Safe above -- measured
+    // 2026-09-01 it has no contract on Base Sepolia (code 0, nonce 0) and no
+    // key behind it, so testnet payments sent there were destroyed on arrival.
+    // Routing them to the faucet closes the loop: what it hands out comes back
+    // when it is spent. Unsetting this stops base-sepolia being offered at all,
+    // rather than falling back to the Safe.
+    "TREASURY_ADDR_TESTNET": "0xD030410BABA777b1e7FacABf679295641203628A",
     "CHAIN_ID": "8453"
   }
 }
