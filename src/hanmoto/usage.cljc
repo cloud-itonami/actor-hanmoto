@@ -32,7 +32,7 @@
 
   `digest` is injected. This namespace is pure: it builds keys and folds
   records, and a host supplies the hash and the store."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def dimensions
   "The only things this actor may price. `pricing.edn` may name no other -- an

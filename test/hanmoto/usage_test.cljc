@@ -1,5 +1,5 @@
 (ns hanmoto.usage-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.lang.text] [clojure.test :refer [deftest is testing]]
             [hanmoto.usage :as u]))
 
 (defn- fake-digest [s] (str "d" (hash s)))
@@ -22,9 +22,9 @@
         k (u/mac-key fake-digest {:caller caller :scope-of "acme"
                                   :instant "2026-08-31T00:00:00Z"})]
     (is (some? k))
-    (is (not (clojure.string/includes? k caller))
+    (is (not (kotoba.lang.text/includes? k caller))
         "鍵に caller がそのまま入っていたら、使用量の export が名簿になる")
-    (is (clojure.string/starts-with? k "mac/acme/2026-08/"))))
+    (is (kotoba.lang.text/starts-with? k "mac/acme/2026-08/"))))
 
 (deftest the-salt-makes-one-caller-one-key-within-a-month-and-unlinkable-outside
   (let [c "did:pkh:eip155:8453:0xabc"

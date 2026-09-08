@@ -14,7 +14,7 @@
   Every resource here is a read of the register. The register is content that
   hanmoto assembled; paying for a read does not authorise mutating anything,
   and nothing here writes."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def seller "hanmoto")
 (def default-facilitator "https://x402.nexus")

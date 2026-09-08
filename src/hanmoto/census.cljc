@@ -24,7 +24,7 @@
   (counted from the account side, carrying no software) wear the same shape and
   come from different places. `by-source` keeps them apart; nothing here adds
   them into one 'number of publishers'."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def software->category
   "Declared. 35 of the 344 distinct software values seen in the corpus; the rest
@@ -44,7 +44,7 @@
 (defn category-of
   "`unknown` for anything the vocabulary does not name. Not the nearest box."
   [software]
-  (or (get software->category (some-> software str/lower-case)) "unknown"))
+  (or (get software->category (some-> software str/lower)) "unknown"))
 
 (defn- host-name [row] (or (get row "domain") (:domain row)))
 (defn- host-software [row] (or (get row "software") (:software row)))
@@ -80,7 +80,7 @@
   [rows]
   (->> rows
        (map host-software)
-       (remove #(contains? software->category (some-> % str/lower-case)))
+       (remove #(contains? software->category (some-> % str/lower)))
        frequencies
        (sort-by (comp - val))
        vec))

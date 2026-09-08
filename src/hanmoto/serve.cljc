@@ -42,7 +42,7 @@
   one `hanmoto.usage` counts, `handle` returns 500 rather than serving --
   charging for something with no record behind it is worse than an outage,
   because nothing goes red."
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [hanmoto.census :as census]
             [hanmoto.offer :as offer]
             [hanmoto.register :as register]

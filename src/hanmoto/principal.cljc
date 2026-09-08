@@ -32,7 +32,7 @@
   CLAUDE.md names this class repo-wide mandatory: the check that could not
   measure returning what the check that measured and found nothing returns.
   Here it would be the check that REFUSED returning what no-check returns."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def anonymous
   "No token was presented. Load is real, the customer is not."
@@ -50,7 +50,7 @@
       (str/blank? (str p)) nil
       (str/starts-with? p "did:pkh:") p
       (re-matches #"^0x[0-9a-fA-F]{40}$" p)
-      (str "did:pkh:eip155:" (or chain-id 8453) ":" (str/lower-case p))
+      (str "did:pkh:eip155:" (or chain-id 8453) ":" (str/lower p))
       :else nil)))
 
 (defn of

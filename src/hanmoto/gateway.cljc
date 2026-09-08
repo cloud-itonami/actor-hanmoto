@@ -48,7 +48,7 @@
       {:refuse :gateway/no-token}          none presented -- for sale, unpaid
       {:refuse :gateway/token-mismatch}    one presented, and it was wrong
       {:refuse :gateway/no-secret}         this origin cannot check at all"
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def token-header
   "Set by nexus `proxy-to-origin` when the seller rule declares `auth-header`.
