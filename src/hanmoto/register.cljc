@@ -14,7 +14,7 @@
 
   This is the same discipline `hanmoto.serve` applies to usage: the thing that
   could be forgotten is returned with the thing that cannot be."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (defn- iso? [s] (boolean (and (string? s) (re-matches #"\d{4}-\d{2}-\d{2}.*" s))))
 

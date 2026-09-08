@@ -47,7 +47,7 @@
             [biscuit.authority :as authority]
             [biscuit.authorizer :as az]
             [biscuit.wire :as wire]
-            [clojure.string :as str]))
+            [kotoba.lang.text :as str]))
 
 (defn- blank? [s] (or (nil? s) (and (string? s) (str/blank? s))))
 

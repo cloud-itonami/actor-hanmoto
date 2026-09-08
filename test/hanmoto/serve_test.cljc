@@ -1,5 +1,5 @@
 (ns hanmoto.serve-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.lang.text] [clojure.test :refer [deftest is testing]]
             [hanmoto.serve :as serve]
             [hanmoto.offer :as offer]
             [hanmoto.usage :as usage]
@@ -142,7 +142,7 @@
           r (serve/handle ctx hostile (who nil))
           keys- (map :key (:usage r))]
       (is (= 1 (count keys-)) "principal が nil なので :mac は立たない")
-      (is (not-any? #(clojure.string/includes? % "victim") keys-)
+      (is (not-any? #(kotoba.lang.text/includes? % "victim") keys-)
           "request が名乗った scope も caller も鍵に入っていない"))))
 
 (deftest the-host-decides-the-scope

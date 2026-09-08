@@ -1,5 +1,5 @@
 (ns hanmoto.principal-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.lang.text] [clojure.test :refer [deftest is testing]]
             [hanmoto.principal :as principal]))
 
 (deftest no-token-is-anonymous-and-that-is-fine
@@ -39,5 +39,5 @@
 (deftest chain-id-is-not-invented
   (let [r (principal/of {:auth nil :chain-id 84532
                          :payer "0xAbC0000000000000000000000000000000000001"})]
-    (is (clojure.string/starts-with? (get-in r [:principal :caller]) "did:pkh:eip155:84532:")
+    (is (kotoba.lang.text/starts-with? (get-in r [:principal :caller]) "did:pkh:eip155:84532:")
         "testnet で mainnet の chain-id を焼き込まない")))
