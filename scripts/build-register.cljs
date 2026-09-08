@@ -26,7 +26,7 @@
   (:require ["child_process" :as cp]
             ["fs" :as fs]
             ["path" :as path]
-            [clojure.string :as str]))
+            [kotoba.lang.text :as str]))
 
 (defn- opt [flag default]
   (let [a (vec (drop 2 (js->clj (.-argv js/process))))
