@@ -26,7 +26,7 @@
             ["fs" :as fs]
             ["os" :as os]
             ["path" :as path]
-            [clojure.string :as str]))
+            [kotoba.lang.text :as str]))
 
 (defn- env [k d] (or (aget (.-env js/process) k) d))
 

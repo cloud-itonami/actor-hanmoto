@@ -27,7 +27,7 @@
             [hanmoto.scope :as scope]
             [hanmoto.register :as register]
             [hanmoto.serve :as serve]
-            [clojure.string :as str]))
+            [kotoba.lang.text :as str]))
 
 (def scope-header "authorization")
 
