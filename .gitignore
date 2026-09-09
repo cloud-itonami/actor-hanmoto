@@ -22,3 +22,6 @@ dist/
 # bundle and was still rolled back this morning, because a stale artifact in
 # somebody's WORKING TREE reaches production just as easily as a committed one.
 # Untracking removes one route; building first removes the other.
+
+# nbb dependency cache -- a build artifact, not source
+.nbb/
