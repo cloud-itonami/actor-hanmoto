@@ -107,5 +107,5 @@ can be argued with, not because anyone may be billed from them.
 ## Run
 
 ```
-clojure -M:test
+kbb -M:test
 ```
