@@ -1,7 +1,7 @@
-#!/usr/bin/env nbb
+#!/usr/bin/env kbb
 ;; Build hanmoto's register from the publisher corpus.
 ;;
-;;   nbb scripts/build-register.cljs [--repo <path>] [--census <file>] [--out-dir <dir>]
+;;   kbb --backend sci scripts/build-register.cljk [--repo <path>] [--census <file>] [--out-dir <dir>]
 ;;
 ;; ## Why this file exists
 ;;

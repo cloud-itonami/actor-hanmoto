@@ -30,7 +30,7 @@
        Stop:
          launchctl bootout gui/$(id -u)/cloud.itonami.hanmoto-register
        See without publishing:
-         nbb scripts/refresh-register.cljs --dry-run -->
+         kbb --backend sci scripts/refresh-register.cljk --dry-run -->
 
   <key>ProgramArguments</key>
   <array>

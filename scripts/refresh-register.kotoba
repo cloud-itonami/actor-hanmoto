@@ -1,7 +1,7 @@
-#!/usr/bin/env nbb
+#!/usr/bin/env kbb
 ;; Re-derive hanmoto's register and publish it, on a schedule.
 ;;
-;;   nbb scripts/refresh-register.cljs [--dry-run]
+;;   kbb --backend sci scripts/refresh-register.cljk [--dry-run]
 ;;
 ;; ## What this is for
 ;;
@@ -84,10 +84,10 @@
   (when-not (fs/existsSync corpus)
     (refuse! :corpus-absent corpus))
   (let [dist (corpus-distance)
-        c (sh (str "cd " root " && nbb --classpath \".:scripts/nbb_compat\" "
+        c (sh (str "cd " root " && kbb --backend sci --classpath \".:scripts/nbb_compat\" "
                    "scripts/publisher-census-datalake-export.cljs --out-dir " census-dir))]
     (when-not (:ok? c) (refuse! :census-failed (str/trim (str (:out c)))))
-    (let [b (sh (str "cd " here " && nbb scripts/build-register.cljs --repo " corpus
+    (let [b (sh (str "cd " here " && kbb --backend sci scripts/build-register.cljk --repo " corpus
                      " --census " census-dir "/publisher_service.json --out-dir " work))]
       (when-not (:ok? b) (refuse! :build-failed (str/trim (str (:out b))))))
     (let [summary (js->clj (js/JSON.parse (fs/readFileSync (path/join work "summary.json") "utf8")))
