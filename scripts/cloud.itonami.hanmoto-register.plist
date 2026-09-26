@@ -18,8 +18,8 @@
        itself had commits as recent as 2026-08-30. Polling faster would not
        find data sooner; it would only make `checked-at` a busier number.
 
-       Every run writes ~/.gftd/hanmoto-register.edn, including runs that
-       change nothing -- a job that writes only on change cannot be told from
+       Every run writes ~/.itonami/hanmoto-register.edn, including runs that
+       change nothing - a job that writes only on change cannot be told from
        one that never fired.
 
        Install:
@@ -30,12 +30,14 @@
        Stop:
          launchctl bootout gui/$(id -u)/cloud.itonami.hanmoto-register
        See without publishing:
-         kbb --backend sci scripts/refresh-register.cljk --dry-run -->
+         kbb scripts/refresh-register.kotoba (dry-run) -->
 
   <key>ProgramArguments</key>
   <array>
-    <string>/opt/homebrew/bin/nbb</string>
-    <string>scripts/refresh-register.cljs</string>
+    <string>/Users/junkawasaki/.local/bin/kbb</string>
+    <string>--backend</string>
+    <string>sci</string>
+    <string>scripts/refresh-register.kotoba</string>
   </array>
 
   <key>WorkingDirectory</key>
@@ -63,8 +65,8 @@
   <false/>
 
   <key>StandardOutPath</key>
-  <string>/Users/junkawasaki/.gftd/hanmoto-register.stdout.log</string>
+  <string>/Users/junkawasaki/.itonami/hanmoto-register.stdout.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/junkawasaki/.gftd/hanmoto-register.stdout.log</string>
+  <string>/Users/junkawasaki/.itonami/hanmoto-register.stdout.log</string>
 </dict>
 </plist>
