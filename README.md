@@ -25,7 +25,7 @@ A headline belongs to kawaraban. The host that served it belongs here.
 (`kotoba-lang/global-accounts-datoms`) carries 174,592 account rows, and this
 register carries none of them.
 
-CLAUDE.md makes that repo-wide mandatory: an account joins only through
+AGENTS.md makes that repo-wide mandatory: an account joins only through
 `:service/host` → `:service/domain`, and that join needs the service, not the
 account. **A register of publishers is a register of organisations.** Answering
 *how many* must not require the ability to answer *who*.
