@@ -29,7 +29,7 @@
     {:principal nil}            no token was presented -- anonymous, billable as load
     {:refuse reason}            a token was presented and did not authorise
 
-  CLAUDE.md names this class repo-wide mandatory: the check that could not
+  AGENTS.md names this class repo-wide mandatory: the check that could not
   measure returning what the check that measured and found nothing returns.
   Here it would be the check that REFUSED returning what no-check returns."
   (:require [kotoba.lang.text :as str]))
