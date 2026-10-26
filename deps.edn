@@ -3,7 +3,10 @@
         ;; kotoba.lang.text, not clojure.string. Pinned as an explicit floor:
         ;; tools.deps takes the NEWEST sha it is shown, so without a floor here
         ;; this repo silently rides whatever a sibling happens to name.
-        io.github.kotoba-lang/text {:git/sha "73bdb13ae7a3d004b44bca08be03a3191157a38f"}
+        io.github.kotoba-lang/text
+        {:git/url "https://github.com/kotoba-lang/kotoba.git"
+         :git/sha "38654600c00caea2caec9ec0650625f2f6a69378"
+         :deps/root "lib/kotoba.text"}
        org.clojure/clojure {:mvn/version "1.12.0"}
         ;; Token verification and the scope model. Both are workspace git deps
         ;; and both are portable .cljc -- they run in the Worker, not beside it.
@@ -14,8 +17,9 @@
         ;; The curve. org-biscuitsec injects sign/verify and deliberately does
         ;; not depend on an implementation, so the host supplies one.
         io.github.kotoba-lang/org-ietf-ed25519
-        {:git/url "https://github.com/kotoba-lang/org-ietf-ed25519.git"
-         :git/sha "c0b11c5ffe25d42f29b3f6a3d2d2317331e75336"}}
+        {:git/url "https://github.com/kotoba-lang/kotoba.git"
+         :git/sha "38654600c00caea2caec9ec0650625f2f6a69378"
+         :deps/root "lib/org.ietf.ed25519"}}
  :aliases
  ;; The compiler is a build tool, so it lives in an alias rather than in
  ;; :deps -- the Worker ships biscuit and the curve, not shadow.
